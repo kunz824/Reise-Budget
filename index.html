@@ -26,9 +26,9 @@
     --accent-soft: rgba(212, 162, 78, 0.35);
     --pos: #4caf7d;
     --neg: #e0605a;
-    --btn-aktiv: #5a6272;
     --tabbar: #2b2e34;
     --tabbar-platte: #33363d;
+    --feld-hoehe: 46px;
     --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color-scheme: dark;
   }
@@ -55,6 +55,7 @@
     letter-spacing: -0.01em;
     margin: 0 0 14px;
     text-wrap: balance;
+    overflow-wrap: anywhere;
   }
   h1 .reise-zeitraum {
     display: block;
@@ -85,11 +86,7 @@
     padding: 8px 10px 9px;
     min-width: 0;
   }
-  .stat .label {
-    color: var(--text-dim);
-    font-size: 11.5px;
-    margin: 0 0 3px;
-  }
+  .stat .label { color: var(--text-dim); font-size: 11.5px; margin: 0 0 3px; }
   .stat .zahl {
     font-size: 17px;
     font-weight: 600;
@@ -111,32 +108,6 @@
   .pos { color: var(--pos); }
   .neg { color: var(--neg); }
 
-  /* ── Hinweis-Leiste (Beispieldaten) ───────────────────────────────── */
-  .hinweis {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--bg-panel-2);
-    border: 1px dashed var(--accent-soft);
-    border-radius: 10px;
-    padding: 9px 12px;
-    font-size: 12.5px;
-    color: var(--text-dim);
-    margin-bottom: 14px;
-  }
-  .hinweis span { flex: 1; min-width: 0; }
-  .hinweis button {
-    background: none;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    border-radius: 16px;
-    font: inherit;
-    font-size: 12px;
-    padding: 5px 11px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-
   /* ── Diagramm ─────────────────────────────────────────────────────── */
   .diagramm-karte {
     background: var(--bg-panel);
@@ -151,22 +122,21 @@
     color: var(--text-dim);
     font-variant-numeric: tabular-nums;
     min-height: 22px;
+    line-height: 1.45;
   }
   .diagramm-auswahl strong { color: var(--text); font-weight: 600; }
   .legende-balken {
     display: flex;
     flex-wrap: wrap;
-    gap: 14px;
+    gap: 6px 14px;
     font-size: 11.5px;
     color: var(--text-dim);
-    padding: 4px 8px 4px;
+    padding: 4px 8px;
   }
-  .legende-eintrag { display: flex; align-items: center; gap: 6px; }
-  .legende-punkt { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
-  .legende-linie {
-    width: 16px; height: 0;
-    border-top: 2px dashed var(--accent);
-  }
+  .legende-eintrag { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+  .legende-punkt { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; display: inline-block; }
+  .legende-linie { width: 16px; height: 0; border-top: 2px dashed var(--text); opacity: 0.7; }
+  .legende-ueber { width: 7px; height: 7px; border-radius: 50%; background: var(--neg); }
 
   /* ── Formulare ────────────────────────────────────────────────────── */
   .formular {
@@ -181,7 +151,7 @@
   .formular-reihe {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 10px 10px;
   }
   .formular label {
     display: flex;
@@ -191,26 +161,81 @@
     color: var(--text-dim);
     min-width: 0;
   }
+  /* 06.10.2026: alle Eingabefelder exakt gleich hoch -- iOS gibt Datum,
+     Auswahl und Text sonst unterschiedliche Höhen. */
   .formular input, .formular select {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    height: var(--feld-hoehe);
+    min-height: var(--feld-hoehe);
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 9px 10px;
+    padding: 0 10px;
+    margin: 0;
     color: var(--text);
     font-family: inherit;
     font-size: 16px;   /* 16px verhindert das automatische Zoomen von iOS */
+    line-height: normal;
     width: 100%;
     min-width: 0;
   }
+  .formular input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+  .formular input[readonly] {
+    background: var(--bg-panel-2);
+    border-style: dashed;
+    color: var(--text);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .formular input:disabled { opacity: 0.55; }
   .formular input:focus, .formular select:focus {
     outline: 2px solid var(--accent-soft);
     outline-offset: 0;
     border-color: var(--accent);
   }
   .formular select:disabled { opacity: 0.5; }
+  .formular .vorschau {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+    margin: 0;
+  }
+  .formular .vorschau strong { color: var(--text); font-weight: 600; }
+  .formular-meldung { font-size: 12.5px; color: var(--neg); margin: 0; }
+  .formular-buttons { display: flex; gap: 10px; }
+  .btn-speichern {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    height: var(--feld-hoehe);
+    padding: 0 18px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    flex: 1;
+  }
+  .btn-abbrechen {
+    background: none;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    height: var(--feld-hoehe);
+    padding: 0 18px;
+    font-family: inherit;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  button:focus-visible, .tab-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 
-  /* Auswahlfelder als klar erkennbare Dropdowns (06.10.2026): eigener
-     Pfeil statt iOS-Standard, der im dunklen Design kaum sichtbar war. */
+  /* Auswahlfelder als klar erkennbare Dropdowns: eigener Pfeil statt
+     iOS-Standard, der im dunklen Design kaum sichtbar war. */
   .auswahl-huelle { position: relative; display: block; min-width: 0; }
   .auswahl-huelle::after {
     content: "";
@@ -224,65 +249,23 @@
     transform: translateY(-70%) rotate(45deg);
     pointer-events: none;
   }
-  .auswahl-huelle select {
+  .auswahl-huelle select { padding-right: 34px; cursor: pointer; }
+  .tabelle-auswahl {
     -webkit-appearance: none;
     appearance: none;
-    padding-right: 34px;
-    cursor: pointer;
-  }
-  .tabelle-auswahl {
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 7px;
     color: var(--text);
     font-family: inherit;
-    font-size: 16px;   /* 16px verhindert das automatische Zoomen von iOS */
-    padding: 5px 26px 5px 8px;
-    width: 100%;
-    max-width: 170px;
+    font-size: 16px;
+    padding: 4px 22px 4px 6px;
+    width: 104px;
   }
   .tabelle-auswahl:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
-  .auswahl-klein { display: inline-block; width: 100%; max-width: 170px; }
+  .auswahl-klein { display: inline-block; width: 104px; }
   .auswahl-klein::after { right: 9px; width: 6px; height: 6px; }
   select.ohne-position { color: var(--text-dim); font-style: italic; }
-  .formular .vorschau {
-    font-size: 12.5px;
-    color: var(--text-dim);
-    font-variant-numeric: tabular-nums;
-  }
-  .formular .vorschau strong { color: var(--text); font-weight: 600; }
-  .formular-meldung {
-    font-size: 12.5px;
-    color: var(--neg);
-    margin: 0;
-  }
-  .formular-buttons { display: flex; gap: 10px; }
-  .btn-speichern {
-    background: var(--accent);
-    color: var(--bg);
-    border: none;
-    border-radius: 8px;
-    padding: 11px 18px;
-    font-family: inherit;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    flex: 1;
-  }
-  .btn-abbrechen {
-    background: none;
-    color: var(--text-dim);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 11px 18px;
-    font-family: inherit;
-    font-size: 15px;
-    cursor: pointer;
-  }
-  button:focus-visible, .tab-btn:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
 
   /* ── Tabellen ─────────────────────────────────────────────────────── */
   .tabelle-karte {
@@ -291,18 +274,14 @@
     overflow-x: auto;
     background: var(--bg-panel);
   }
-  .tabelle-scroll { max-height: 420px; overflow-y: auto; }
+  .tabelle-scroll { max-height: 440px; overflow-y: auto; }
   .tabelle-scroll thead th {
     position: sticky;
     top: 0;
     background: var(--bg-panel);
     z-index: 1;
   }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th {
     text-align: left;
     color: var(--text-dim);
@@ -317,15 +296,16 @@
     font-variant-numeric: tabular-nums;
   }
   tbody tr:last-child td { border-bottom: none; }
-  tfoot td {
-    border-top: 1px solid var(--border);
-    border-bottom: none;
-    font-weight: 600;
-  }
+  tfoot td { border-top: 1px solid var(--border); border-bottom: none; font-weight: 600; }
   th.zahl-spalte, td.zahl-spalte { text-align: right; white-space: nowrap; }
   td.aktionen-spalte { white-space: nowrap; text-align: right; width: 1%; }
   tr.in-bearbeitung td { background: var(--bg-panel-2); }
-  .ohne-position { color: var(--text-dim); font-style: italic; }
+  .tabelle-kompakt table { font-size: 12px; }
+  .tabelle-kompakt th { padding: 8px 6px 6px; }
+  .tabelle-kompakt td { padding: 7px 5px; }
+  .tabelle-kompakt .btn-bearbeiten, .tabelle-kompakt .btn-loeschen { padding: 4px 4px; }
+  .original-waehrung { color: var(--text-dim); }
+  .positions-name { display: inline-flex; align-items: center; gap: 7px; }
 
   .btn-bearbeiten, .btn-loeschen {
     background: none;
@@ -333,25 +313,14 @@
     cursor: pointer;
     font-family: inherit;
     font-size: 15px;
-    padding: 4px 7px;
+    padding: 4px 6px;
     border-radius: 6px;
   }
   .btn-bearbeiten { color: var(--text-dim); }
   .btn-loeschen { color: var(--neg); }
-  .btn-loeschen.bestaetigen {
-    background: var(--neg);
-    color: #fff;
-    font-size: 12px;
-    font-weight: 600;
-  }
+  .btn-loeschen.bestaetigen { background: var(--neg); color: #fff; font-size: 12px; font-weight: 600; }
 
-  .leer {
-    color: var(--text-dim);
-    font-size: 13px;
-    padding: 18px 12px;
-    text-align: center;
-    margin: 0;
-  }
+  .leer { color: var(--text-dim); font-size: 13px; padding: 18px 12px; text-align: center; margin: 0; }
 
   /* ── Tabbar (aus der Tinu-Trading-Vorlage) ────────────────────────── */
   #tabBar {
@@ -368,15 +337,7 @@
     z-index: 10;
     --tab-x: 60px;
   }
-  #tabBarPlatte {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 62px;
-    z-index: -1;
-    display: block;
-  }
+  #tabBarPlatte { position: absolute; top: 0; left: 0; width: 100%; height: 62px; z-index: -1; display: block; }
   .tab-welle {
     position: absolute;
     left: calc(var(--tab-x) - 16px);
@@ -426,11 +387,7 @@
     filter: grayscale(1) opacity(0.75);
   }
   .tab-btn.aktiv .tab-icon { transform: translateY(2px) scale(1.05); filter: none; }
-  .tab-label {
-    font-size: 10.5px;
-    color: var(--text-dim);
-    white-space: nowrap;
-  }
+  .tab-label { font-size: 10.5px; color: var(--text-dim); white-space: nowrap; }
   .tab-btn.aktiv .tab-label { color: var(--text); font-weight: 600; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -445,12 +402,7 @@
 <body>
 
 <main>
-  <h1 id="reiseTitel">Reise Budgetplaner<span class="reise-zeitraum" id="reiseZeitraum">–</span></h1>
-
-  <div class="hinweis" id="beispielHinweis" hidden>
-    <span>Das sind Beispieldaten, damit du siehst, wie die App rechnet. Ändere sie oder beginne leer.</span>
-    <button type="button" id="leerBeginnen">Leer beginnen</button>
-  </div>
+  <h1><span id="reiseTitel">Reise Budgetplaner</span><span class="reise-zeitraum" id="reiseZeitraum">–</span></h1>
 
   <!-- ── Register 1: Dashboard ─────────────────────────────────────── -->
   <section id="register-dashboard" class="register aktiv">
@@ -484,14 +436,10 @@
       </div>
     </div>
 
-    <h2>Ist-Kosten je Tag</h2>
+    <h2>Ist-Kosten je Tag nach Budgetposition (CHF)</h2>
     <div class="diagramm-karte">
-      <svg id="tagesDiagramm" role="img" aria-label="Balkendiagramm der Ist-Kosten je Reisetag"></svg>
-      <div class="legende-balken">
-        <span class="legende-eintrag"><span class="legende-punkt" style="background:var(--accent)"></span>im Tagesbudget</span>
-        <span class="legende-eintrag"><span class="legende-punkt" style="background:var(--neg)"></span>über Tagesbudget</span>
-        <span class="legende-eintrag"><span class="legende-linie"></span>Tagesbudget</span>
-      </div>
+      <svg id="tagesDiagramm" role="img" aria-label="Gestapeltes Balkendiagramm der Ist-Kosten je Reisetag nach Budgetposition"></svg>
+      <div class="legende-balken" id="diagrammLegende"></div>
       <div class="diagramm-auswahl" id="diagrammAuswahl">Tippe auf einen Tag für Details.</div>
     </div>
   </section>
@@ -514,8 +462,11 @@
       </div>
     </div>
 
-    <h2>Reisedauer</h2>
+    <h2>Reise</h2>
     <div class="formular">
+      <label>Beschreibung
+        <input type="text" id="reiseBeschreibung" maxlength="80" placeholder="z.B. Japan Rundreise 2027" autocomplete="off">
+      </label>
       <div class="formular-reihe">
         <label>Start
           <input type="date" id="reiseStart">
@@ -524,15 +475,10 @@
           <input type="date" id="reiseEnde">
         </label>
       </div>
-      <div class="formular-reihe">
-        <label>Reisedauer (Tage)
-          <input type="number" id="reiseTage" min="1" step="1" inputmode="numeric" placeholder="z.B. 14">
-        </label>
-        <label>Währung
-          <input type="text" id="reiseWaehrung" maxlength="5" placeholder="CHF" autocomplete="off">
-        </label>
-      </div>
-      <p class="vorschau" id="dauerHinweis">Start und Ende setzen die Tage automatisch (beide Tage zählen mit).</p>
+      <label>Reisedauer (Tage)
+        <input type="number" id="reiseTage" min="1" step="1" inputmode="numeric" placeholder="z.B. 14">
+      </label>
+      <p class="vorschau" id="dauerHinweis">Start und Ende setzen die Tage automatisch (beide Tage zählen mit). Beträge in CHF.</p>
     </div>
 
     <h2 id="positionFormularTitel">Budgetposition erfassen</h2>
@@ -540,7 +486,7 @@
       <label>Positionsname
         <input type="text" id="positionName" placeholder="z.B. Unterkunft" autocomplete="off" maxlength="40">
       </label>
-      <label>Durchschnitt je Tag
+      <label>Durchschnitt je Tag (CHF)
         <input type="number" id="positionProTag" placeholder="0.00" step="0.05" min="0" inputmode="decimal">
       </label>
       <p class="vorschau" id="positionVorschau">Summe je Dauer: –</p>
@@ -551,14 +497,14 @@
       </div>
     </form>
 
-    <h2>Budgetpositionen</h2>
-    <div class="tabelle-karte">
+    <h2>Budgetpositionen (CHF)</h2>
+    <div class="tabelle-karte tabelle-kompakt">
       <table>
         <thead>
           <tr>
             <th>Position</th>
             <th class="zahl-spalte">Ø je Tag</th>
-            <th class="zahl-spalte">Summe je Dauer</th>
+            <th class="zahl-spalte">Summe</th>
             <th></th>
           </tr>
         </thead>
@@ -592,13 +538,25 @@
         <label>Datum
           <input type="date" id="ausgabeDatum">
         </label>
+        <label>Positionsname
+          <span class="auswahl-huelle"><select id="ausgabePosition"></select></span>
+        </label>
         <label>Betrag
-          <input type="number" id="ausgabeBetrag" placeholder="0.00" step="0.05" min="0" inputmode="decimal">
+          <input type="number" id="ausgabeBetrag" placeholder="0.00" step="0.01" min="0" inputmode="decimal">
+        </label>
+        <label>Währung
+          <input type="text" id="ausgabeWaehrung" list="waehrungsListe" maxlength="3" autocomplete="off"
+                 autocapitalize="characters" spellcheck="false" placeholder="CHF">
+        </label>
+        <label id="kursLabel">Kurs: 1 CHF in CHF
+          <input type="number" id="ausgabeKurs" step="0.0001" min="0" inputmode="decimal" placeholder="1.0000">
+        </label>
+        <label>Betrag in CHF
+          <input type="text" id="ausgabeChf" readonly tabindex="-1" value="–">
         </label>
       </div>
-      <label>Positionsname
-        <span class="auswahl-huelle"><select id="ausgabePosition"></select></span>
-      </label>
+      <datalist id="waehrungsListe"></datalist>
+      <p class="vorschau" id="kursHinweis"></p>
       <p class="formular-meldung" id="ausgabeMeldung" hidden></p>
       <div class="formular-buttons">
         <button type="submit" class="btn-speichern" id="ausgabeSpeichern">Ausgabe hinzufügen</button>
@@ -607,13 +565,14 @@
     </form>
 
     <h2>Ausgaben</h2>
-    <div class="tabelle-karte tabelle-scroll">
+    <div class="tabelle-karte tabelle-scroll tabelle-kompakt">
       <table>
         <thead>
           <tr>
             <th>Datum</th>
             <th>Position</th>
             <th class="zahl-spalte">Betrag</th>
+            <th class="zahl-spalte">CHF</th>
             <th></th>
           </tr>
         </thead>
@@ -646,13 +605,32 @@
 
 <script>
 // ── Datenmodell ──────────────────────────────────────────────────────
-// Ein einziges Dokument je Person:
-// { waehrung, start, ende, tage,
-//   positionen: [{id, name, proTag}],
-//   ausgaben:   [{id, datum, positionId, betrag}] }
-// Ausgaben verweisen per id auf die Position -- ein Umbenennen der
-// Position wirkt dadurch automatisch auch auf alle bisherigen Ausgaben.
+// Ein einziges Dokument in JSONBin:
+// { beschreibung, start, ende, tage,
+//   positionen: [{id, name, proTag}],                    -- proTag in CHF
+//   ausgaben:   [{id, datum, positionId, betrag,         -- betrag in CHF
+//                 betragOrig, waehrung, kurs}],          -- Originalbeleg
+//   kurse:      {EUR: 0.93, ...},                        -- letzte Kurse (offline)
+//   letzteWaehrung: "EUR" }
+// Hauswährung ist immer CHF (06.10.2026): Dashboard und Budget rechnen
+// nur in CHF, Fremdwährungen werden bei der Erfassung umgerechnet.
 const SPEICHER_KEY = "reiseBudgetplaner.v1";
+const HAUSWAEHRUNG = "CHF";
+
+// Farben je Budgetposition (Reihenfolge der Positionen), im Ton der
+// Tinu-Trading-Systemfarben.
+const POSITIONS_FARBEN = ["#d4a24e", "#5aa9bb", "#9b8ad1", "#4caf7d", "#e0785a", "#c9c46a", "#6f93d8", "#c77dab"];
+const FARBE_OHNE_POSITION = "#5a6270";
+function positionsFarbe(id) {
+  const i = zustand.positionen.findIndex(p => p.id === id);
+  return i < 0 ? FARBE_OHNE_POSITION : POSITIONS_FARBEN[i % POSITIONS_FARBEN.length];
+}
+
+// Währungen mit Tageskurs der EZB (über api.frankfurter.dev). Andere
+// Codes sind erlaubt, der Kurs wird dann von Hand eingetragen.
+const KURS_WAEHRUNGEN = ["CHF", "EUR", "USD", "GBP", "JPY", "THB", "AUD", "CAD", "NZD", "SGD", "HKD",
+  "CNY", "IDR", "MYR", "PHP", "INR", "KRW", "ZAR", "TRY", "MXN", "BRL", "SEK", "NOK", "DKK",
+  "ISK", "CZK", "PLN", "HUF", "RON", "BGN", "ILS"];
 
 // ── Datum-Hilfen (lokal, nicht UTC -- toISOString() würde abends
 // in der Schweiz bereits den Folgetag bzw. Vortag liefern) ───────────
@@ -662,8 +640,7 @@ function heuteISO() {
 }
 function isoPlusTage(iso, n) {
   const [j, m, t] = iso.split("-").map(Number);
-  const d = new Date(Date.UTC(j, m - 1, t + n));
-  return d.toISOString().slice(0, 10);
+  return new Date(Date.UTC(j, m - 1, t + n)).toISOString().slice(0, 10);
 }
 // Ganze Tage zwischen zwei ISO-Daten (b − a), sommerzeitsicher über UTC
 function tageZwischen(a, b) {
@@ -675,7 +652,7 @@ function datumKurz(iso, mitWochentag) {
   const d = new Date(iso + "T00:00:00");
   return d.toLocaleDateString("de-CH", mitWochentag
     ? { weekday: "short", day: "2-digit", month: "2-digit" }
-    : { day: "2-digit", month: "2-digit", year: "2-digit" });
+    : { day: "2-digit", month: "2-digit" });
 }
 
 // ── Zahlenformat CH (Tausender-Apostroph) ────────────────────────────
@@ -684,56 +661,40 @@ function formatZahlCH(wert, nachkomma = 2) {
   teile[0] = teile[0].replace(/\B(?=(\d{3})+(?!\d))/g, "'");
   return (wert < 0 ? "−" : "") + teile.join(".");
 }
+// Kacheln zeigen nur die Zahl (CHF steht in der Kopfzeile) -- sonst wird
+// der Wert auf dem iPhone abgeschnitten.
+function zahl(wert, mitVorzeichen) {
+  return mitVorzeichen ? `${wert >= 0 ? "+" : "−"}${formatZahlCH(Math.abs(wert))}` : formatZahlCH(wert);
+}
 function geld(wert, mitVorzeichen) {
-  const w = zustand.waehrung || "CHF";
-  if (mitVorzeichen) {
-    const vz = wert >= 0 ? "+" : "−";
-    return `${vz}${formatZahlCH(Math.abs(wert))} ${w}`;
-  }
-  return `${formatZahlCH(wert)} ${w}`;
+  if (mitVorzeichen) return `${wert >= 0 ? "+" : "−"}${formatZahlCH(Math.abs(wert))} ${HAUSWAEHRUNG}`;
+  return `${formatZahlCH(wert)} ${HAUSWAEHRUNG}`;
 }
-function geldGanz(wert) {
-  return `${formatZahlCH(wert, 0)} ${zustand.waehrung || "CHF"}`;
-}
+function runde2(x) { return Math.round(x * 100) / 100; }
 function neueId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 
-// ── Beispieldaten (nur beim allerersten Öffnen, klar markiert) ───────
-function beispielZustand() {
-  const heute = heuteISO();
-  const start = isoPlusTage(heute, -5);
-  const p = [
-    { id: "bsp-unterkunft", name: "Unterkunft", proTag: 120 },
-    { id: "bsp-essen", name: "Verpflegung", proTag: 60 },
-    { id: "bsp-transport", name: "Transport", proTag: 35 },
-    { id: "bsp-aktiv", name: "Aktivitäten", proTag: 40 },
-    { id: "bsp-div", name: "Diverses", proTag: 15 },
-  ];
-  const a = [];
-  const muster = [
-    [118, 72, 41, 0, 12], [118, 55, 18, 65, 9], [135, 64, 0, 38, 22],
-    [118, 81, 56, 0, 6], [118, 49, 23, 90, 31], [0, 27, 8, 0, 0],
-  ];
-  muster.forEach((tag, i) => {
-    tag.forEach((betrag, j) => {
-      if (betrag > 0) a.push({ id: `bsp-${i}-${j}`, datum: isoPlusTage(start, i), positionId: p[j].id, betrag });
-    });
-  });
-  return { waehrung: "CHF", start, ende: isoPlusTage(start, 20), tage: 21, positionen: p, ausgaben: a, beispiel: true };
-}
 function leererZustand() {
-  return { waehrung: "CHF", start: "", ende: "", tage: 0, positionen: [], ausgaben: [], beispiel: false };
+  return { beschreibung: "", start: "", ende: "", tage: 0, positionen: [], ausgaben: [], kurse: {}, letzteWaehrung: HAUSWAEHRUNG };
 }
 function normalisiere(roh) {
   const z = Object.assign(leererZustand(), roh || {});
+  delete z.beispiel;     // Altlast der ersten Version
+  delete z.waehrung;     // Hauswährung ist fix CHF
   z.positionen = Array.isArray(z.positionen) ? z.positionen : [];
-  z.ausgaben = Array.isArray(z.ausgaben) ? z.ausgaben : [];
+  z.ausgaben = (Array.isArray(z.ausgaben) ? z.ausgaben : []).map(a => {
+    // Ausgaben aus der ersten Version waren immer in CHF
+    const waehrung = a.waehrung || HAUSWAEHRUNG;
+    return Object.assign({ waehrung, betragOrig: Number(a.betrag) || 0, kurs: 1 }, a, { waehrung });
+  });
+  z.kurse = (z.kurse && typeof z.kurse === "object") ? z.kurse : {};
   z.tage = Number(z.tage) || 0;
+  z.beschreibung = typeof z.beschreibung === "string" ? z.beschreibung : "";
   return z;
 }
 
-// ── Speichern: lokal sofort, dann JSONBin (06.10.2026) ──────────────
+// ── Speichern: lokal sofort, dann JSONBin ────────────────────────────
 // localStorage zeigt die Daten sofort beim Öffnen und hält Änderungen,
 // falls gerade kein Netz da ist. JSONBin ist die gemeinsame Quelle für
 // Handy und PC. Sparsam mit dem JSONBin-Kontingent: eine Leseanfrage
@@ -759,13 +720,11 @@ function istAusstehend() {
   try { return localStorage.getItem(AUSSTEHEND_KEY) === "1"; } catch { return false; }
 }
 
-let zustand = normalisiere(lokalLaden() || leererZustand());
+let zustand = normalisiere(lokalLaden());
 let schreibtGerade = false;
 let schreibenAusstehend = false;
-let speicherText = "lädt …";
 
 function setzeSpeicherStand(text) {
-  speicherText = text;
   document.getElementById("speicherStand").textContent = text;
 }
 
@@ -804,7 +763,6 @@ async function jsonbinSchreiben() {
 
 let schreibTimer = null;
 function speichere() {
-  zustand.beispiel = false;
   lokalSpeichern();
   setzeAusstehend(true);
   renderAlles();
@@ -815,12 +773,16 @@ function speichere() {
 async function jsonbinSync() {
   // Ungespeicherte lokale Änderungen (z.B. offline erfasst) haben Vorrang
   if (istAusstehend()) { jsonbinSchreiben(); return; }
+  setzeSpeicherStand("lädt …");
   try {
     const daten = await jsonbinLesen();
-    // Nicht überschreiben, während gerade eine eigene Änderung unterwegs ist
+    // Nicht überschreiben, wenn inzwischen eine eigene Änderung ansteht
     if (schreibtGerade || istAusstehend()) return;
     zustand = normalisiere(daten);
     lokalSpeichern();
+    if (!ausgabeBearbeitungsId && !document.getElementById("ausgabeBetrag").value) {
+      ausgabeFormularZuruecksetzen(document.getElementById("ausgabeDatum").value);
+    }
     renderAlles();
     setzeSpeicherStand("☁ aktuell");
   } catch (fehler) {
@@ -834,7 +796,7 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") jsonbinSync();
 });
 
-// ── Berechnungen ─────────────────────────────────────────────────────
+// ── Berechnungen (alles in CHF) ──────────────────────────────────────
 function berechne(z, heute) {
   const tage = z.tage || 0;
   const budgetProTag = z.positionen.reduce((s, p) => s + (Number(p.proTag) || 0), 0);
@@ -879,51 +841,53 @@ function renderAlles() {
   const heute = heuteISO();
   const k = berechne(zustand, heute);
 
-  document.getElementById("beispielHinweis").hidden = !zustand.beispiel;
+  document.getElementById("reiseTitel").textContent = zustand.beschreibung || "Reise Budgetplaner";
+  document.title = zustand.beschreibung ? `${zustand.beschreibung} · Reise Budgetplaner` : "Reise Budgetplaner";
   document.getElementById("reiseZeitraum").textContent = (zustand.start && zustand.ende)
-    ? `${datumKurz(zustand.start, true)} – ${datumKurz(zustand.ende, true)} · ${k.tage} Tage`
-    : (k.tage ? `${k.tage} Tage` : "Reisedauer im Register Budget festlegen");
+    ? `${datumKurz(zustand.start, true)} – ${datumKurz(zustand.ende, true)} · ${k.tage} Tage · Beträge in CHF`
+    : (k.tage ? `${k.tage} Tage · Beträge in CHF` : "Reise im Register Budget festlegen");
 
   // Dashboard
-  setzeZahl("dBudget", geld(k.budget));
+  setzeZahl("dBudget", zahl(k.budget));
   document.getElementById("dBudgetZusatz").textContent = k.tage
     ? `${geld(k.budgetProTag)} je Tag × ${k.tage}` : "Reisedauer fehlt";
-  setzeZahl("dIst", geld(k.ist));
+  setzeZahl("dIst", zahl(k.ist));
   document.getElementById("dIstZusatz").textContent = k.budget > 0
     ? `${formatZahlCH(k.ist / k.budget * 100, 0)} % des Budgets verbraucht` : "";
-  setzeZahl("dDelta", geld(k.delta, true), k.delta >= 0 ? "pos" : "neg");
-  setzeZahl("dSchnitt", geld(k.schnitt), k.budgetProTag > 0 ? (k.schnitt <= k.budgetProTag ? "pos" : "neg") : null);
+  setzeZahl("dDelta", zahl(k.delta, true), k.delta >= 0 ? "pos" : "neg");
+  setzeZahl("dSchnitt", zahl(k.schnitt), k.budgetProTag > 0 ? (k.schnitt <= k.budgetProTag ? "pos" : "neg") : null);
   document.getElementById("dSchnittZusatz").textContent = k.vergangen
     ? `über ${k.vergangen} Tag${k.vergangen === 1 ? "" : "e"}` : "noch keine Tage";
-  setzeZahl("dForecast", geld(k.forecast), k.budget > 0 ? (k.forecast <= k.budget ? "pos" : "neg") : null);
-  document.getElementById("dForecastZusatz").textContent = k.tage
-    ? `Ø × ${k.tage} Tage` : "Reisedauer fehlt";
+  setzeZahl("dForecast", zahl(k.forecast), k.budget > 0 ? (k.forecast <= k.budget ? "pos" : "neg") : null);
+  document.getElementById("dForecastZusatz").textContent = k.tage ? `Ø × ${k.tage} Tage` : "Reisedauer fehlt";
 
   // Budget
-  setzeZahl("bSumme", geld(k.budget));
+  setzeZahl("bSumme", zahl(k.budget));
   setzeZahl("bTage", k.tage ? String(k.tage) : "–");
   setzeZahl("bVerbleibend", k.verbleibend === null ? "–" : String(k.verbleibend));
   document.getElementById("bVerbleibendZusatz").textContent = k.verbleibend === null
     ? "Start/Ende fehlen" : (heute < zustand.start ? "Reise noch nicht begonnen" : "inkl. heute");
+  setzeWertWennFrei("reiseBeschreibung", zustand.beschreibung || "");
   setzeWertWennFrei("reiseStart", zustand.start || "");
   setzeWertWennFrei("reiseEnde", zustand.ende || "");
   setzeWertWennFrei("reiseTage", k.tage || "");
-  setzeWertWennFrei("reiseWaehrung", zustand.waehrung || "CHF");
+  setzeKalenderGrenzen();
   renderPositionen(k);
   aktualisierePositionVorschau();
 
   // Ausgaben
-  setzeZahl("aSumme", geld(k.ist));
+  setzeZahl("aSumme", zahl(k.ist));
   const heuteSumme = zustand.ausgaben.filter(a => a.datum === heute).reduce((s, a) => s + Number(a.betrag), 0);
-  setzeZahl("aHeute", geld(heuteSumme));
+  setzeZahl("aHeute", zahl(heuteSumme));
   setzeZahl("aAnzahl", String(zustand.ausgaben.length));
+  renderWaehrungsListe();
   renderPositionAuswahl();
   renderAusgaben();
 
   zeichneDiagramm(k);
 }
 
-// ── Zweistufiges Löschen (Viewer zeigt kein confirm()) ───────────────
+// ── Zweistufiges Löschen (Bestätigung direkt am Knopf) ───────────────
 function loeschKnopf(beimBestaetigen, hinweis) {
   const btn = document.createElement("button");
   btn.type = "button";
@@ -956,28 +920,52 @@ function bearbeitenKnopf(beimKlick) {
   return btn;
 }
 
-// ── Reisedauer ───────────────────────────────────────────────────────
-function datumGeaendert() {
-  const start = document.getElementById("reiseStart").value;
-  let ende = document.getElementById("reiseEnde").value;
+// ── Reise: Beschreibung und Dauer ────────────────────────────────────
+// 06.10.2026: Es werden nur neue Reisen geplant -- der Kalender bietet
+// keine vergangenen Tage mehr an (Start ab heute, Ende ab Start).
+function setzeKalenderGrenzen() {
+  const heute = heuteISO();
+  const startEl = document.getElementById("reiseStart");
+  const endeEl = document.getElementById("reiseEnde");
+  startEl.min = heute;
+  endeEl.min = startEl.value && startEl.value > heute ? startEl.value : heute;
+}
+
+document.getElementById("reiseBeschreibung").addEventListener("change", (e) => {
+  zustand.beschreibung = e.target.value.trim().slice(0, 80);
+  speichere();
+});
+
+function datumGeaendert(e) {
+  const heute = heuteISO();
+  const startEl = document.getElementById("reiseStart");
+  const endeEl = document.getElementById("reiseEnde");
   const hinweis = document.getElementById("dauerHinweis");
+  const zeigeFehler = (text) => {
+    hinweis.textContent = text;
+    hinweis.classList.add("neg");
+    e.target.value = e.target === startEl ? (zustand.start || "") : (zustand.ende || "");
+  };
+  // Vergangene Tage werden nur abgelehnt, wenn sie NEU gewählt werden --
+  // eine laufende Reise mit Start in der Vergangenheit bleibt gültig.
+  if (e.target.value && e.target.value < heute) {
+    zeigeFehler("Bitte ein Datum ab heute wählen.");
+    return;
+  }
+  const start = startEl.value;
+  const ende = endeEl.value;
+  if (start && ende && tageZwischen(start, ende) < 0) {
+    zeigeFehler("Das Ende liegt vor dem Start. Bitte das Datum prüfen.");
+    return;
+  }
   zustand.start = start;
   zustand.ende = ende;
   if (start && ende) {
-    const diff = tageZwischen(start, ende);
-    if (diff < 0) {
-      hinweis.textContent = "Das Ende liegt vor dem Start. Bitte das Datum prüfen.";
-      hinweis.classList.add("neg");
-      zustand.ende = "";
-      speichere();
-      return;
-    }
-    zustand.tage = diff + 1;
+    zustand.tage = tageZwischen(start, ende) + 1;
   } else if (start && zustand.tage > 0) {
-    // Nur Start gesetzt: Ende aus der bereits bekannten Dauer ableiten
-    zustand.ende = isoPlusTage(start, zustand.tage - 1);
+    zustand.ende = isoPlusTage(start, zustand.tage - 1);   // Ende aus bekannter Dauer
   }
-  hinweis.textContent = "Start und Ende setzen die Tage automatisch (beide Tage zählen mit).";
+  hinweis.textContent = "Start und Ende setzen die Tage automatisch (beide Tage zählen mit). Beträge in CHF.";
   hinweis.classList.remove("neg");
   speichere();
 }
@@ -986,17 +974,19 @@ document.getElementById("reiseEnde").addEventListener("change", datumGeaendert);
 document.getElementById("reiseTage").addEventListener("change", (e) => {
   const tage = Math.max(0, Math.round(Number(e.target.value) || 0));
   zustand.tage = tage;
-  // Manuell gesetzte Dauer verschiebt das Ende passend zum Start
   if (zustand.start && tage > 0) zustand.ende = isoPlusTage(zustand.start, tage - 1);
-  speichere();
-});
-document.getElementById("reiseWaehrung").addEventListener("change", (e) => {
-  zustand.waehrung = (e.target.value || "CHF").trim().toUpperCase().slice(0, 5) || "CHF";
   speichere();
 });
 
 // ── Budgetpositionen ─────────────────────────────────────────────────
 let positionBearbeitungsId = null;
+
+function farbPunkt(farbe) {
+  const s = document.createElement("span");
+  s.className = "legende-punkt";
+  s.style.background = farbe;
+  return s;
+}
 
 function renderPositionen(k) {
   const tbody = document.getElementById("positionenTabelle");
@@ -1009,7 +999,10 @@ function renderPositionen(k) {
     const tr = document.createElement("tr");
     if (p.id === positionBearbeitungsId) tr.className = "in-bearbeitung";
     const name = document.createElement("td");
-    name.textContent = p.name;
+    const nameInhalt = document.createElement("span");
+    nameInhalt.className = "positions-name";
+    nameInhalt.append(farbPunkt(positionsFarbe(p.id)), document.createTextNode(p.name));
+    name.appendChild(nameInhalt);
     tr.appendChild(name);
     tr.insertAdjacentHTML("beforeend", `
       <td class="zahl-spalte">${formatZahlCH(Number(p.proTag))}</td>
@@ -1098,6 +1091,103 @@ document.getElementById("positionAbbrechen").addEventListener("click", () => {
   renderAlles();
 });
 
+// ── Wechselkurse (06.10.2026) ────────────────────────────────────────
+// Tageskurs zum Ausgabedatum von der EZB (api.frankfurter.dev, gratis,
+// ohne Schlüssel). Am Wochenende liefert die Quelle den letzten
+// Handelstag. Der Kurs bleibt im Formular änderbar (z.B. Kurs der Bank
+// oder Bargeldbezug), und der zuletzt verwendete Kurs je Währung wird
+// gespeichert -- so funktioniert die Erfassung auch offline.
+const kursCache = {};
+let kursManuell = false;   // true, sobald der Kurs von Hand geändert wurde
+let kursAnfrageNr = 0;
+
+function aktuelleWaehrung() {
+  return (document.getElementById("ausgabeWaehrung").value || HAUSWAEHRUNG).trim().toUpperCase();
+}
+
+async function holeKurs(waehrung, datum) {
+  const tag = datum && datum < heuteISO() ? datum : "latest";
+  const schluessel = `${waehrung}|${tag}`;
+  if (kursCache[schluessel]) return kursCache[schluessel];
+  const antwort = await fetch(`https://api.frankfurter.dev/v1/${tag}?base=${waehrung}&symbols=${HAUSWAEHRUNG}`);
+  if (!antwort.ok) throw new Error(`HTTP ${antwort.status}`);
+  const daten = await antwort.json();
+  const kurs = daten.rates && daten.rates[HAUSWAEHRUNG];
+  if (!kurs) throw new Error("kein Kurs");
+  kursCache[schluessel] = { kurs, datum: daten.date };
+  return kursCache[schluessel];
+}
+
+async function aktualisiereKurs() {
+  const waehrung = aktuelleWaehrung();
+  const kursEl = document.getElementById("ausgabeKurs");
+  const hinweis = document.getElementById("kursHinweis");
+  document.getElementById("kursLabel").firstChild.textContent = `Kurs: 1 ${waehrung || "?"} in CHF`;
+
+  if (waehrung === HAUSWAEHRUNG) {
+    kursEl.value = "1";
+    kursEl.disabled = true;
+    hinweis.textContent = "";
+    aktualisiereChfVorschau();
+    return;
+  }
+  kursEl.disabled = false;
+  if (!/^[A-Z]{3}$/.test(waehrung)) {
+    hinweis.textContent = "Währung als 3-Buchstaben-Code eingeben, z.B. EUR, USD, THB.";
+    aktualisiereChfVorschau();
+    return;
+  }
+  if (kursManuell) { aktualisiereChfVorschau(); return; }
+
+  // Sofort den zuletzt bekannten Kurs zeigen, dann den Tageskurs nachladen
+  if (zustand.kurse[waehrung]) kursEl.value = zustand.kurse[waehrung];
+  aktualisiereChfVorschau();
+  if (!KURS_WAEHRUNGEN.includes(waehrung)) {
+    hinweis.textContent = zustand.kurse[waehrung]
+      ? `Zuletzt verwendeter Kurs für ${waehrung}. Für diese Währung gibt es keinen automatischen Kurs.`
+      : `Für ${waehrung} gibt es keinen automatischen Kurs. Bitte von Hand eintragen.`;
+    return;
+  }
+  const nr = ++kursAnfrageNr;
+  hinweis.textContent = "Kurs wird geladen …";
+  try {
+    const ergebnis = await holeKurs(waehrung, document.getElementById("ausgabeDatum").value);
+    if (nr !== kursAnfrageNr || kursManuell) return;   // inzwischen etwas anderes gewählt
+    kursEl.value = Number(ergebnis.kurs.toFixed(4));
+    hinweis.textContent = `EZB-Kurs vom ${new Date(ergebnis.datum + "T00:00:00").toLocaleDateString("de-CH")} · bei Bedarf anpassen.`;
+  } catch {
+    if (nr !== kursAnfrageNr) return;
+    hinweis.textContent = zustand.kurse[waehrung]
+      ? "Offline: zuletzt verwendeter Kurs. Bei Bedarf anpassen."
+      : "Kurs konnte nicht geladen werden. Bitte von Hand eintragen.";
+  }
+  aktualisiereChfVorschau();
+}
+
+function aktualisiereChfVorschau() {
+  const betrag = Number(document.getElementById("ausgabeBetrag").value);
+  const kurs = Number(document.getElementById("ausgabeKurs").value);
+  const ausgabe = document.getElementById("ausgabeChf");
+  ausgabe.value = betrag > 0 && kurs > 0 ? formatZahlCH(runde2(betrag * kurs)) : "–";
+}
+
+function renderWaehrungsListe() {
+  const liste = document.getElementById("waehrungsListe");
+  liste.innerHTML = "";
+  const codes = [...new Set([...KURS_WAEHRUNGEN, ...Object.keys(zustand.kurse)])];
+  for (const code of codes) liste.appendChild(new Option(code));
+}
+
+document.getElementById("ausgabeWaehrung").addEventListener("input", (e) => {
+  e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, "");
+  kursManuell = false;
+  if (e.target.value.length === 3 || e.target.value === "") aktualisiereKurs();
+});
+document.getElementById("ausgabeWaehrung").addEventListener("change", () => { kursManuell = false; aktualisiereKurs(); });
+document.getElementById("ausgabeDatum").addEventListener("change", () => { kursManuell = false; aktualisiereKurs(); });
+document.getElementById("ausgabeKurs").addEventListener("input", () => { kursManuell = true; aktualisiereChfVorschau(); });
+document.getElementById("ausgabeBetrag").addEventListener("input", aktualisiereChfVorschau);
+
 // ── Ausgaben ─────────────────────────────────────────────────────────
 let ausgabeBearbeitungsId = null;
 
@@ -1111,12 +1201,12 @@ function renderPositionAuswahl() {
   const bisher = select.value;
   select.innerHTML = "";
   if (!zustand.positionen.length) {
-    select.add(new Option("Erst im Register Budget eine Position anlegen", ""));
+    select.add(new Option("Erst Budgetposition anlegen", ""));
     select.disabled = true;
     return;
   }
   select.disabled = false;
-  select.add(new Option("Position wählen …", ""));
+  select.add(new Option("Wählen …", ""));
   for (const p of zustand.positionen) select.add(new Option(p.name, p.id));
   if (zustand.positionen.some(p => p.id === bisher)) select.value = bisher;
 }
@@ -1129,10 +1219,11 @@ function renderAusgaben() {
   for (const a of sortiert) {
     const tr = document.createElement("tr");
     if (a.id === ausgabeBearbeitungsId) tr.className = "in-bearbeitung";
+
     const datum = document.createElement("td");
-    datum.textContent = datumKurz(a.datum, true);
-    // 06.10.2026: Positionsname direkt in der Zeile als Auswahlfeld --
-    // Umbuchen auf eine andere Position ohne Umweg über das Formular.
+    datum.textContent = datumKurz(a.datum, false);
+
+    // Positionsname direkt in der Zeile als Auswahlfeld (Umbuchen)
     const pos = document.createElement("td");
     const name = positionName(a.positionId);
     const huelle = document.createElement("span");
@@ -1154,13 +1245,32 @@ function renderAusgaben() {
     });
     huelle.appendChild(auswahl);
     pos.appendChild(huelle);
-    const betrag = document.createElement("td");
-    betrag.className = "zahl-spalte";
-    betrag.textContent = formatZahlCH(Number(a.betrag));
+
+    // Originalbetrag in der erfassten Währung + Umrechnung in CHF
+    const original = document.createElement("td");
+    original.className = "zahl-spalte";
+    if (a.waehrung === HAUSWAEHRUNG) {
+      original.textContent = "–";          // CHF-Beleg: Betrag steht in der CHF-Spalte
+      original.className += " original-waehrung";
+    } else {
+      // Grosse Beträge (z.B. 10'000 JPY) ohne Rappen, damit die Spalte schmal bleibt
+      const orig = Number(a.betragOrig);
+      original.textContent = `${formatZahlCH(orig, orig >= 1000 ? 0 : 2)} `;
+      const code = document.createElement("span");
+      code.className = "original-waehrung";
+      code.textContent = a.waehrung;
+      original.appendChild(code);
+      original.title = `Kurs ${a.kurs}`;
+    }
+
+    const chf = document.createElement("td");
+    chf.className = "zahl-spalte";
+    chf.textContent = formatZahlCH(Number(a.betrag));
+
     const aktionen = document.createElement("td");
     aktionen.className = "aktionen-spalte";
     aktionen.append(bearbeitenKnopf(() => bearbeiteAusgabe(a.id)), loeschKnopf(() => loescheAusgabe(a.id)));
-    tr.append(datum, pos, betrag, aktionen);
+    tr.append(datum, pos, original, chf, aktionen);
     tbody.appendChild(tr);
   }
 }
@@ -1170,23 +1280,32 @@ function bearbeiteAusgabe(id) {
   if (!a) return;
   ausgabeBearbeitungsId = id;
   document.getElementById("ausgabeDatum").value = a.datum;
-  document.getElementById("ausgabeBetrag").value = a.betrag;
+  document.getElementById("ausgabeBetrag").value = a.betragOrig;
+  document.getElementById("ausgabeWaehrung").value = a.waehrung;
+  document.getElementById("ausgabeKurs").value = a.kurs;
+  kursManuell = true;   // gespeicherten Kurs der Ausgabe nicht überschreiben
   renderPositionAuswahl();
   document.getElementById("ausgabePosition").value = positionName(a.positionId) ? a.positionId : "";
   document.getElementById("ausgabeFormularTitel").textContent = "Ausgabe bearbeiten";
   document.getElementById("ausgabeSpeichern").textContent = "Änderung speichern";
   document.getElementById("ausgabeAbbrechen").hidden = false;
+  aktualisiereKurs();
+  document.getElementById("kursHinweis").textContent = a.waehrung !== HAUSWAEHRUNG
+    ? "Gespeicherter Kurs dieser Ausgabe. Datum oder Währung ändern lädt einen neuen." : "";
   renderAusgaben();
   document.getElementById("ausgabeFormularTitel").scrollIntoView({ behavior: "smooth", block: "start" });
 }
-function ausgabeFormularZuruecksetzen() {
+function ausgabeFormularZuruecksetzen(datum) {
   ausgabeBearbeitungsId = null;
-  document.getElementById("ausgabeDatum").value = heuteISO();
+  document.getElementById("ausgabeDatum").value = datum || heuteISO();
   document.getElementById("ausgabeBetrag").value = "";
+  document.getElementById("ausgabeWaehrung").value = zustand.letzteWaehrung || HAUSWAEHRUNG;
   document.getElementById("ausgabeFormularTitel").textContent = "Ausgabe erfassen";
   document.getElementById("ausgabeSpeichern").textContent = "Ausgabe hinzufügen";
   document.getElementById("ausgabeAbbrechen").hidden = true;
   document.getElementById("ausgabeMeldung").hidden = true;
+  kursManuell = false;
+  aktualisiereKurs();
 }
 function loescheAusgabe(id) {
   zustand.ausgaben = zustand.ausgaben.filter(a => a.id !== id);
@@ -1198,25 +1317,31 @@ document.getElementById("ausgabeFormular").addEventListener("submit", (e) => {
   const datum = document.getElementById("ausgabeDatum").value;
   const positionId = document.getElementById("ausgabePosition").value;
   const betragRoh = document.getElementById("ausgabeBetrag").value;
-  const betrag = Number(betragRoh);
+  const betragOrig = Number(betragRoh);
+  const waehrung = aktuelleWaehrung();
+  const kurs = waehrung === HAUSWAEHRUNG ? 1 : Number(document.getElementById("ausgabeKurs").value);
   const meldung = document.getElementById("ausgabeMeldung");
   let fehler = "";
   if (!zustand.positionen.length) fehler = "Lege zuerst im Register Budget eine Budgetposition an.";
   else if (!datum) fehler = "Bitte ein Datum wählen.";
   else if (!positionId) fehler = "Bitte einen Positionsnamen wählen.";
-  else if (betragRoh === "" || !(betrag > 0)) fehler = "Bitte einen Betrag grösser als 0 eingeben.";
+  else if (betragRoh === "" || !(betragOrig > 0)) fehler = "Bitte einen Betrag grösser als 0 eingeben.";
+  else if (!/^[A-Z]{3}$/.test(waehrung)) fehler = "Bitte die Währung als 3-Buchstaben-Code eingeben, z.B. EUR.";
+  else if (!(kurs > 0)) fehler = `Bitte den Kurs für ${waehrung} eintragen (1 ${waehrung} in CHF).`;
   if (fehler) { meldung.textContent = fehler; meldung.hidden = false; return; }
 
+  const eintrag = { datum, positionId, betragOrig, waehrung, kurs, betrag: runde2(betragOrig * kurs) };
   if (ausgabeBearbeitungsId) {
     const a = zustand.ausgaben.find(x => x.id === ausgabeBearbeitungsId);
-    if (a) { a.datum = datum; a.positionId = positionId; a.betrag = betrag; }
+    if (a) Object.assign(a, eintrag);
   } else {
-    zustand.ausgaben.push({ id: neueId(), datum, positionId, betrag });
+    zustand.ausgaben.push(Object.assign({ id: neueId() }, eintrag));
   }
-  // Datum und Position bleiben für die nächste Erfassung stehen
-  const letztesDatum = datum;
-  ausgabeFormularZuruecksetzen();
-  document.getElementById("ausgabeDatum").value = letztesDatum;
+  if (waehrung !== HAUSWAEHRUNG) zustand.kurse[waehrung] = kurs;
+  zustand.letzteWaehrung = waehrung;
+  // Datum, Position und Währung bleiben für die nächste Erfassung stehen
+  ausgabeFormularZuruecksetzen(datum);
+  renderWaehrungsListe();
   speichere();
   document.getElementById("ausgabeBetrag").focus({ preventScroll: true });
 });
@@ -1225,7 +1350,7 @@ document.getElementById("ausgabeAbbrechen").addEventListener("click", () => {
   renderAusgaben();
 });
 
-// ── Balkendiagramm: Ist-Kosten je Reisetag (reines SVG) ──────────────
+// ── Balkendiagramm: Ist-Kosten je Reisetag, gestapelt nach Position ──
 // Zeichnet in echten Pixeln der aktuellen Breite (nicht per viewBox
 // skaliert), damit die Beschriftung auf dem Handy lesbar bleibt.
 let ausgewaehlterTag = null;
@@ -1238,6 +1363,26 @@ function diagrammTage() {
   if (!daten.length) return [];
   const n = Math.min(tageZwischen(daten[0], daten[daten.length - 1]) + 1, 120);
   return Array.from({ length: n }, (_, i) => isoPlusTage(daten[0], i));
+}
+
+function renderLegende(mitOhnePosition) {
+  const legende = document.getElementById("diagrammLegende");
+  legende.innerHTML = "";
+  const eintrag = (marke, text) => {
+    const e = document.createElement("span");
+    e.className = "legende-eintrag";
+    e.appendChild(marke);
+    e.appendChild(document.createTextNode(text));
+    legende.appendChild(e);
+  };
+  for (const p of zustand.positionen) eintrag(farbPunkt(positionsFarbe(p.id)), p.name);
+  if (mitOhnePosition) eintrag(farbPunkt(FARBE_OHNE_POSITION), "ohne Position");
+  const linie = document.createElement("span");
+  linie.className = "legende-linie";
+  eintrag(linie, "Tagesbudget");
+  const ueber = document.createElement("span");
+  ueber.className = "legende-ueber";
+  eintrag(ueber, "über Tagesbudget");
 }
 
 function zeichneDiagramm(k) {
@@ -1262,16 +1407,27 @@ function zeichneDiagramm(k) {
     return e;
   };
 
+  // Ausgaben je Tag und Position (CHF)
+  const jeTag = {};
+  let gibtOhnePosition = false;
+  for (const a of zustand.ausgaben) {
+    const pid = positionName(a.positionId) ? a.positionId : "_ohne";
+    if (pid === "_ohne") gibtOhnePosition = true;
+    jeTag[a.datum] = jeTag[a.datum] || {};
+    jeTag[a.datum][pid] = (jeTag[a.datum][pid] || 0) + Number(a.betrag);
+  }
+  renderLegende(gibtOhnePosition);
+
   if (!tage.length) {
     el("text", { x: breite / 2, y: hoehe / 2, fill: "var(--text-dim)", "font-size": "13", "text-anchor": "middle" },
-      "Noch keine Daten: Reisedauer oder Ausgaben erfassen.");
+      "Noch keine Daten: Reise im Register Budget festlegen.");
     auswahl.textContent = "";
     return;
   }
 
-  const jeTag = {};
-  for (const a of zustand.ausgaben) jeTag[a.datum] = (jeTag[a.datum] || 0) + Number(a.betrag);
-  const werte = tage.map(d => jeTag[d] || 0);
+  const reihenfolge = [...zustand.positionen.map(p => p.id), "_ohne"];
+  const tagesSumme = d => Object.values(jeTag[d] || {}).reduce((s, v) => s + v, 0);
+  const werte = tage.map(tagesSumme);
   const tagesBudget = k.budgetProTag;
 
   // Achse: runde Obergrenze über dem höchsten Wert bzw. dem Tagesbudget
@@ -1279,13 +1435,12 @@ function zeichneDiagramm(k) {
   const schritt = Math.pow(10, Math.floor(Math.log10(rohMax)));
   const yMax = Math.ceil(rohMax * 1.1 / (schritt / 2)) * (schritt / 2);
 
-  const links = 44, rechts = breite - 8, oben = 10, unten = hoehe - 26;
+  const links = 44, rechts = breite - 8, oben = 12, unten = hoehe - 26;
   const plotH = unten - oben;
   const y = v => unten - (v / yMax) * plotH;
   const slot = (rechts - links) / tage.length;
   const balkenB = Math.max(2, Math.min(28, slot * 0.68));
 
-  // Raster + Achsenwerte (3 Linien)
   for (let i = 0; i <= 3; i++) {
     const v = (yMax / 3) * i;
     el("line", { x1: links, x2: rechts, y1: y(v), y2: y(v), stroke: "var(--border)", "stroke-width": "1" });
@@ -1298,10 +1453,9 @@ function zeichneDiagramm(k) {
 
   tage.forEach((datum, i) => {
     const x = links + i * slot;
-    const wert = werte[i];
     const istAusgewaehlt = datum === ausgewaehlterTag;
 
-    const flaeche = el("rect", { x, y: oben, width: slot, height: plotH + 24,
+    const flaeche = el("rect", { x, y: 0, width: slot, height: hoehe,
       fill: istAusgewaehlt ? "var(--bg-panel-2)" : "transparent" });
     flaeche.style.cursor = "pointer";
     flaeche.addEventListener("click", () => {
@@ -1309,14 +1463,24 @@ function zeichneDiagramm(k) {
       zeichneDiagramm(berechne(zustand, heuteISO()));
     });
 
-    if (wert > 0) {
-      const ueber = tagesBudget > 0 && wert > tagesBudget;
-      const balken = el("rect", {
-        x: x + (slot - balkenB) / 2, y: y(wert), width: balkenB, height: Math.max(1, unten - y(wert)),
-        rx: Math.min(3, balkenB / 3), fill: ueber ? "var(--neg)" : "var(--accent)",
-        opacity: datum > heute ? "0.5" : "1",
+    // Gestapelte Segmente je Budgetposition, von unten nach oben
+    let basis = 0;
+    const bx = x + (slot - balkenB) / 2;
+    for (const pid of reihenfolge) {
+      const wert = (jeTag[datum] || {})[pid] || 0;
+      if (wert <= 0) continue;
+      const seg = el("rect", {
+        x: bx, y: y(basis + wert), width: balkenB, height: Math.max(1, y(basis) - y(basis + wert)),
+        fill: pid === "_ohne" ? FARBE_OHNE_POSITION : positionsFarbe(pid),
+        stroke: "var(--bg-panel)", "stroke-width": balkenB > 6 ? "1" : "0",
       });
-      balken.style.pointerEvents = "none";
+      seg.style.pointerEvents = "none";
+      basis += wert;
+    }
+    // Über dem Tagesbudget: roter Punkt über dem Balken
+    if (tagesBudget > 0 && basis > tagesBudget) {
+      const punkt = el("circle", { cx: x + slot / 2, cy: Math.max(oben - 4, y(basis) - 6), r: Math.min(3.5, balkenB / 2 + 1), fill: "var(--neg)" });
+      punkt.style.pointerEvents = "none";
     }
 
     if (i % beschriftungJede === 0 || istAusgewaehlt) {
@@ -1330,13 +1494,11 @@ function zeichneDiagramm(k) {
     }
   });
 
-  // Tagesbudget als gestrichelte Linie
   if (tagesBudget > 0) {
     const l = el("line", { x1: links, x2: rechts, y1: y(tagesBudget), y2: y(tagesBudget),
-      stroke: "var(--accent)", "stroke-width": "1.5", "stroke-dasharray": "5 4" });
+      stroke: "var(--text)", "stroke-width": "1.5", "stroke-dasharray": "5 4", opacity: "0.7" });
     l.style.pointerEvents = "none";
   }
-  // Heute markieren
   const heuteIndex = tage.indexOf(heute);
   if (heuteIndex >= 0) {
     const hx = links + heuteIndex * slot + slot / 2;
@@ -1345,26 +1507,20 @@ function zeichneDiagramm(k) {
     m.style.pointerEvents = "none";
   }
 
-  // Detail zum gewählten Tag
+  // Detail zum gewählten Tag inkl. Aufteilung nach Position
   if (ausgewaehlterTag && tage.includes(ausgewaehlterTag)) {
-    const wert = jeTag[ausgewaehlterTag] || 0;
-    const posten = zustand.ausgaben.filter(a => a.datum === ausgewaehlterTag);
-    const differenz = tagesBudget - wert;
-    auswahl.innerHTML = `<strong>${datumKurz(ausgewaehlterTag, true)}</strong> · ${geld(wert)}`
+    const summe = tagesSumme(ausgewaehlterTag);
+    const differenz = tagesBudget - summe;
+    const teile = reihenfolge
+      .filter(pid => ((jeTag[ausgewaehlterTag] || {})[pid] || 0) > 0)
+      .map(pid => `${pid === "_ohne" ? "ohne Position" : positionName(pid)} ${formatZahlCH(jeTag[ausgewaehlterTag][pid])}`);
+    auswahl.innerHTML = `<strong>${datumKurz(ausgewaehlterTag, true)}</strong> · ${geld(summe)}`
       + (tagesBudget > 0 ? ` · <span class="${differenz >= 0 ? "pos" : "neg"}">${geld(differenz, true)}</span> zum Tagesbudget` : "")
-      + ` · ${posten.length} Ausgabe${posten.length === 1 ? "" : "n"}`;
+      + (teile.length ? `<br>${teile.join(" · ")}` : "");
   } else {
     auswahl.textContent = "Tippe auf einen Tag für Details.";
   }
 }
-
-// ── Beispieldaten verwerfen ──────────────────────────────────────────
-document.getElementById("leerBeginnen").addEventListener("click", () => {
-  zustand = leererZustand();
-  positionFormularZuruecksetzen();
-  ausgabeFormularZuruecksetzen();
-  speichere();
-});
 
 // ── Register-Umschaltung + Tabbar-Einbuchtung (wie Tinu-Trading) ─────
 function positioniereWelle() {
@@ -1416,8 +1572,8 @@ window.addEventListener("resize", () => {
 window.addEventListener("load", positioniereWelle);
 
 // ── Start ────────────────────────────────────────────────────────────
+renderWaehrungsListe();
 ausgabeFormularZuruecksetzen();
-setzeSpeicherStand(speicherText);
 renderAlles();
 let startRegister = "dashboard";
 try { startRegister = localStorage.getItem(SPEICHER_KEY + ".register") || "dashboard"; } catch { /* egal */ }
