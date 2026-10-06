@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Reise Budgetplaner</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Reisebudget">
+<meta name="theme-color" content="#10141b">
+<style>
+  /* Layout: Register-App im Tinu-Trading-Stil -- eine Spalte (max. 640px),
+     feste Tabbar unten mit Einbuchtung unter dem aktiven Register.
+     Bewusst ein einziges dunkles Erscheinungsbild (wie die Vorlage). */
+  :root {
+    --bg: #10141b;
+    --bg-panel: #171d27;
+    --bg-panel-2: #1c2431;
+    --border: #262f3d;
+    --text: #e7e6e2;
+    --text-dim: #8b93a3;
+    --accent: #d4a24e;
+    --accent-soft: rgba(212, 162, 78, 0.35);
+    --pos: #4caf7d;
+    --neg: #e0605a;
+    --btn-aktiv: #5a6272;
+    --tabbar: #2b2e34;
+    --tabbar-platte: #33363d;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+  }
+  main {
+    padding-inline: 16px;
+    padding-block: calc(22px + env(safe-area-inset-top, 0px)) 120px;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .register { display: none; }
+  .register.aktiv { display: block; }
+
+  h1 {
+    font-size: 20px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+  h1 .reise-zeitraum {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-dim);
+    margin-top: 3px;
+    letter-spacing: 0;
+  }
+  h2 {
+    font-size: 14px;
+    color: var(--text-dim);
+    font-weight: 500;
+    margin: 22px 0 10px;
+  }
+
+  /* ── Kacheln ──────────────────────────────────────────────────────── */
+  .stats-reihe {
+    display: grid;
+    grid-template-columns: repeat(var(--spalten, 3), minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .stat {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 10px 9px;
+    min-width: 0;
+  }
+  .stat .label {
+    color: var(--text-dim);
+    font-size: 11.5px;
+    margin: 0 0 3px;
+  }
+  .stat .zahl {
+    font-size: 17px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .stat .zusatz {
+    font-size: 10.5px;
+    color: var(--text-dim);
+    margin: 2px 0 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-gross { padding: 12px 14px 13px; }
+  .stat-gross .zahl { font-size: 26px; letter-spacing: -0.02em; }
+
+  .pos { color: var(--pos); }
+  .neg { color: var(--neg); }
+
+  /* ── Hinweis-Leiste (Beispieldaten) ───────────────────────────────── */
+  .hinweis {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-panel-2);
+    border: 1px dashed var(--accent-soft);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+  }
+  .hinweis span { flex: 1; min-width: 0; }
+  .hinweis button {
+    background: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 16px;
+    font: inherit;
+    font-size: 12px;
+    padding: 5px 11px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  /* ── Diagramm ─────────────────────────────────────────────────────── */
+  .diagramm-karte {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 6px 6px;
+  }
+  #tagesDiagramm { display: block; width: 100%; height: 230px; }
+  .diagramm-auswahl {
+    font-size: 12.5px;
+    padding: 6px 8px 2px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+    min-height: 22px;
+  }
+  .diagramm-auswahl strong { color: var(--text); font-weight: 600; }
+  .legende-balken {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 11.5px;
+    color: var(--text-dim);
+    padding: 4px 8px 4px;
+  }
+  .legende-eintrag { display: flex; align-items: center; gap: 6px; }
+  .legende-punkt { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+  .legende-linie {
+    width: 16px; height: 0;
+    border-top: 2px dashed var(--accent);
+  }
+
+  /* ── Formulare ────────────────────────────────────────────────────── */
+  .formular {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .formular-reihe {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .formular label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--text-dim);
+    min-width: 0;
+  }
+  .formular input, .formular select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 10px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 16px;   /* 16px verhindert das automatische Zoomen von iOS */
+    width: 100%;
+    min-width: 0;
+  }
+  .formular input:focus, .formular select:focus {
+    outline: 2px solid var(--accent-soft);
+    outline-offset: 0;
+    border-color: var(--accent);
+  }
+  .formular select:disabled { opacity: 0.5; }
+
+  /* Auswahlfelder als klar erkennbare Dropdowns (06.10.2026): eigener
+     Pfeil statt iOS-Standard, der im dunklen Design kaum sichtbar war. */
+  .auswahl-huelle { position: relative; display: block; min-width: 0; }
+  .auswahl-huelle::after {
+    content: "";
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid var(--accent);
+    border-bottom: 2px solid var(--accent);
+    transform: translateY(-70%) rotate(45deg);
+    pointer-events: none;
+  }
+  .auswahl-huelle select {
+    -webkit-appearance: none;
+    appearance: none;
+    padding-right: 34px;
+    cursor: pointer;
+  }
+  .tabelle-auswahl {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 16px;   /* 16px verhindert das automatische Zoomen von iOS */
+    padding: 5px 26px 5px 8px;
+    width: 100%;
+    max-width: 170px;
+  }
+  .tabelle-auswahl:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+  .auswahl-klein { display: inline-block; width: 100%; max-width: 170px; }
+  .auswahl-klein::after { right: 9px; width: 6px; height: 6px; }
+  select.ohne-position { color: var(--text-dim); font-style: italic; }
+  .formular .vorschau {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .formular .vorschau strong { color: var(--text); font-weight: 600; }
+  .formular-meldung {
+    font-size: 12.5px;
+    color: var(--neg);
+    margin: 0;
+  }
+  .formular-buttons { display: flex; gap: 10px; }
+  .btn-speichern {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    padding: 11px 18px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    flex: 1;
+  }
+  .btn-abbrechen {
+    background: none;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 18px;
+    font-family: inherit;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  button:focus-visible, .tab-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ── Tabellen ─────────────────────────────────────────────────────── */
+  .tabelle-karte {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow-x: auto;
+    background: var(--bg-panel);
+  }
+  .tabelle-scroll { max-height: 420px; overflow-y: auto; }
+  .tabelle-scroll thead th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-panel);
+    z-index: 1;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    text-align: left;
+    color: var(--text-dim);
+    font-weight: 500;
+    padding: 9px 10px 7px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tfoot td {
+    border-top: 1px solid var(--border);
+    border-bottom: none;
+    font-weight: 600;
+  }
+  th.zahl-spalte, td.zahl-spalte { text-align: right; white-space: nowrap; }
+  td.aktionen-spalte { white-space: nowrap; text-align: right; width: 1%; }
+  tr.in-bearbeitung td { background: var(--bg-panel-2); }
+  .ohne-position { color: var(--text-dim); font-style: italic; }
+
+  .btn-bearbeiten, .btn-loeschen {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 15px;
+    padding: 4px 7px;
+    border-radius: 6px;
+  }
+  .btn-bearbeiten { color: var(--text-dim); }
+  .btn-loeschen { color: var(--neg); }
+  .btn-loeschen.bestaetigen {
+    background: var(--neg);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .leer {
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 18px 12px;
+    text-align: center;
+    margin: 0;
+  }
+
+  /* ── Tabbar (aus der Tinu-Trading-Vorlage) ────────────────────────── */
+  #tabBar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    gap: 4px;
+    background: var(--tabbar);
+    padding: 14px 8px calc(10px + env(safe-area-inset-bottom, 0px));
+    z-index: 10;
+    --tab-x: 60px;
+  }
+  #tabBarPlatte {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 62px;
+    z-index: -1;
+    display: block;
+  }
+  .tab-welle {
+    position: absolute;
+    left: calc(var(--tab-x) - 16px);
+    top: -4px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--accent) 0%, var(--accent-soft) 65%, transparent 100%);
+    transition: left 0.25s ease;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .stand-anzeige {
+    position: absolute;
+    top: 3px;
+    right: 10px;
+    font-size: 9px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    z-index: 2;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 0 8px;
+    flex: 1;
+    max-width: 110px;
+    position: relative;
+    z-index: 2;
+    transition: transform 0.25s ease;
+  }
+  .tab-btn.aktiv { transform: translateY(-20px); }
+  .tab-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    transition: transform 0.25s ease, filter 0.2s ease;
+    filter: grayscale(1) opacity(0.75);
+  }
+  .tab-btn.aktiv .tab-icon { transform: translateY(2px) scale(1.05); filter: none; }
+  .tab-label {
+    font-size: 10.5px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .tab-btn.aktiv .tab-label { color: var(--text); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tab-btn, .tab-icon, .tab-welle { transition: none; }
+  }
+  @media (max-width: 380px) {
+    .stat .zahl { font-size: 15px; }
+    .stat-gross .zahl { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<main>
+  <h1 id="reiseTitel">Reise Budgetplaner<span class="reise-zeitraum" id="reiseZeitraum">–</span></h1>
+
+  <div class="hinweis" id="beispielHinweis" hidden>
+    <span>Das sind Beispieldaten, damit du siehst, wie die App rechnet. Ändere sie oder beginne leer.</span>
+    <button type="button" id="leerBeginnen">Leer beginnen</button>
+  </div>
+
+  <!-- ── Register 1: Dashboard ─────────────────────────────────────── -->
+  <section id="register-dashboard" class="register aktiv">
+    <div class="stats-reihe" style="--spalten:2;">
+      <div class="stat stat-gross">
+        <p class="label">Budget</p>
+        <p class="zahl" id="dBudget">–</p>
+        <p class="zusatz" id="dBudgetZusatz"></p>
+      </div>
+      <div class="stat stat-gross">
+        <p class="label">Ist-Kosten</p>
+        <p class="zahl" id="dIst">–</p>
+        <p class="zusatz" id="dIstZusatz"></p>
+      </div>
+    </div>
+    <div class="stats-reihe" style="--spalten:3;">
+      <div class="stat">
+        <p class="label">Delta Soll/Ist</p>
+        <p class="zahl" id="dDelta">–</p>
+        <p class="zusatz">Budget − Ist</p>
+      </div>
+      <div class="stat">
+        <p class="label">Ø je Tag</p>
+        <p class="zahl" id="dSchnitt">–</p>
+        <p class="zusatz" id="dSchnittZusatz"></p>
+      </div>
+      <div class="stat">
+        <p class="label">Forecast</p>
+        <p class="zahl" id="dForecast">–</p>
+        <p class="zusatz" id="dForecastZusatz"></p>
+      </div>
+    </div>
+
+    <h2>Ist-Kosten je Tag</h2>
+    <div class="diagramm-karte">
+      <svg id="tagesDiagramm" role="img" aria-label="Balkendiagramm der Ist-Kosten je Reisetag"></svg>
+      <div class="legende-balken">
+        <span class="legende-eintrag"><span class="legende-punkt" style="background:var(--accent)"></span>im Tagesbudget</span>
+        <span class="legende-eintrag"><span class="legende-punkt" style="background:var(--neg)"></span>über Tagesbudget</span>
+        <span class="legende-eintrag"><span class="legende-linie"></span>Tagesbudget</span>
+      </div>
+      <div class="diagramm-auswahl" id="diagrammAuswahl">Tippe auf einen Tag für Details.</div>
+    </div>
+  </section>
+
+  <!-- ── Register 2: Budget ────────────────────────────────────────── -->
+  <section id="register-budget" class="register">
+    <div class="stats-reihe" style="--spalten:3;">
+      <div class="stat">
+        <p class="label">Budget gesamt</p>
+        <p class="zahl" id="bSumme">–</p>
+      </div>
+      <div class="stat">
+        <p class="label">Anzahl Tage</p>
+        <p class="zahl" id="bTage">–</p>
+      </div>
+      <div class="stat">
+        <p class="label">Verbleibend</p>
+        <p class="zahl" id="bVerbleibend">–</p>
+        <p class="zusatz" id="bVerbleibendZusatz"></p>
+      </div>
+    </div>
+
+    <h2>Reisedauer</h2>
+    <div class="formular">
+      <div class="formular-reihe">
+        <label>Start
+          <input type="date" id="reiseStart">
+        </label>
+        <label>Ende
+          <input type="date" id="reiseEnde">
+        </label>
+      </div>
+      <div class="formular-reihe">
+        <label>Reisedauer (Tage)
+          <input type="number" id="reiseTage" min="1" step="1" inputmode="numeric" placeholder="z.B. 14">
+        </label>
+        <label>Währung
+          <input type="text" id="reiseWaehrung" maxlength="5" placeholder="CHF" autocomplete="off">
+        </label>
+      </div>
+      <p class="vorschau" id="dauerHinweis">Start und Ende setzen die Tage automatisch (beide Tage zählen mit).</p>
+    </div>
+
+    <h2 id="positionFormularTitel">Budgetposition erfassen</h2>
+    <form class="formular" id="positionFormular" novalidate>
+      <label>Positionsname
+        <input type="text" id="positionName" placeholder="z.B. Unterkunft" autocomplete="off" maxlength="40">
+      </label>
+      <label>Durchschnitt je Tag
+        <input type="number" id="positionProTag" placeholder="0.00" step="0.05" min="0" inputmode="decimal">
+      </label>
+      <p class="vorschau" id="positionVorschau">Summe je Dauer: –</p>
+      <p class="formular-meldung" id="positionMeldung" hidden></p>
+      <div class="formular-buttons">
+        <button type="submit" class="btn-speichern" id="positionSpeichern">Position hinzufügen</button>
+        <button type="button" class="btn-abbrechen" id="positionAbbrechen" hidden>Abbrechen</button>
+      </div>
+    </form>
+
+    <h2>Budgetpositionen</h2>
+    <div class="tabelle-karte">
+      <table>
+        <thead>
+          <tr>
+            <th>Position</th>
+            <th class="zahl-spalte">Ø je Tag</th>
+            <th class="zahl-spalte">Summe je Dauer</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="positionenTabelle"></tbody>
+        <tfoot id="positionenFuss"></tfoot>
+      </table>
+      <p class="leer" id="positionenLeer" hidden>Noch keine Budgetposition. Erfasse oben die erste, z.B. Unterkunft.</p>
+    </div>
+  </section>
+
+  <!-- ── Register 3: Ausgaben ──────────────────────────────────────── -->
+  <section id="register-ausgaben" class="register">
+    <div class="stats-reihe" style="--spalten:3;">
+      <div class="stat">
+        <p class="label">Ausgaben total</p>
+        <p class="zahl" id="aSumme">–</p>
+      </div>
+      <div class="stat">
+        <p class="label">Heute</p>
+        <p class="zahl" id="aHeute">–</p>
+      </div>
+      <div class="stat">
+        <p class="label">Einträge</p>
+        <p class="zahl" id="aAnzahl">–</p>
+      </div>
+    </div>
+
+    <h2 id="ausgabeFormularTitel">Ausgabe erfassen</h2>
+    <form class="formular" id="ausgabeFormular" novalidate>
+      <div class="formular-reihe">
+        <label>Datum
+          <input type="date" id="ausgabeDatum">
+        </label>
+        <label>Betrag
+          <input type="number" id="ausgabeBetrag" placeholder="0.00" step="0.05" min="0" inputmode="decimal">
+        </label>
+      </div>
+      <label>Positionsname
+        <span class="auswahl-huelle"><select id="ausgabePosition"></select></span>
+      </label>
+      <p class="formular-meldung" id="ausgabeMeldung" hidden></p>
+      <div class="formular-buttons">
+        <button type="submit" class="btn-speichern" id="ausgabeSpeichern">Ausgabe hinzufügen</button>
+        <button type="button" class="btn-abbrechen" id="ausgabeAbbrechen" hidden>Abbrechen</button>
+      </div>
+    </form>
+
+    <h2>Ausgaben</h2>
+    <div class="tabelle-karte tabelle-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Datum</th>
+            <th>Position</th>
+            <th class="zahl-spalte">Betrag</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="ausgabenTabelle"></tbody>
+      </table>
+      <p class="leer" id="ausgabenLeer" hidden>Noch keine Ausgaben erfasst.</p>
+    </div>
+  </section>
+</main>
+
+<nav id="tabBar">
+  <svg id="tabBarPlatte" viewBox="0 0 400 62" preserveAspectRatio="none" aria-hidden="true">
+    <path id="tabBarPfad" style="fill:var(--tabbar-platte);stroke:var(--border)" stroke-width="0.6"></path>
+  </svg>
+  <span class="tab-welle" id="tabWelle"></span>
+  <span class="stand-anzeige" id="speicherStand">–</span>
+  <button class="tab-btn aktiv" data-register="dashboard" type="button">
+    <span class="tab-icon" aria-hidden="true">📊</span>
+    <span class="tab-label">Dashboard</span>
+  </button>
+  <button class="tab-btn" data-register="budget" type="button">
+    <span class="tab-icon" aria-hidden="true">🧮</span>
+    <span class="tab-label">Budget</span>
+  </button>
+  <button class="tab-btn" data-register="ausgaben" type="button">
+    <span class="tab-icon" aria-hidden="true">🧾</span>
+    <span class="tab-label">Ausgaben</span>
+  </button>
+</nav>
+
+<script>
+// ── Datenmodell ──────────────────────────────────────────────────────
+// Ein einziges Dokument je Person:
+// { waehrung, start, ende, tage,
+//   positionen: [{id, name, proTag}],
+//   ausgaben:   [{id, datum, positionId, betrag}] }
+// Ausgaben verweisen per id auf die Position -- ein Umbenennen der
+// Position wirkt dadurch automatisch auch auf alle bisherigen Ausgaben.
+const SPEICHER_KEY = "reiseBudgetplaner.v1";
+
+// ── Datum-Hilfen (lokal, nicht UTC -- toISOString() würde abends
+// in der Schweiz bereits den Folgetag bzw. Vortag liefern) ───────────
+function heuteISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function isoPlusTage(iso, n) {
+  const [j, m, t] = iso.split("-").map(Number);
+  const d = new Date(Date.UTC(j, m - 1, t + n));
+  return d.toISOString().slice(0, 10);
+}
+// Ganze Tage zwischen zwei ISO-Daten (b − a), sommerzeitsicher über UTC
+function tageZwischen(a, b) {
+  const [j1, m1, t1] = a.split("-").map(Number);
+  const [j2, m2, t2] = b.split("-").map(Number);
+  return Math.round((Date.UTC(j2, m2 - 1, t2) - Date.UTC(j1, m1 - 1, t1)) / 86400000);
+}
+function datumKurz(iso, mitWochentag) {
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("de-CH", mitWochentag
+    ? { weekday: "short", day: "2-digit", month: "2-digit" }
+    : { day: "2-digit", month: "2-digit", year: "2-digit" });
+}
+
+// ── Zahlenformat CH (Tausender-Apostroph) ────────────────────────────
+function formatZahlCH(wert, nachkomma = 2) {
+  const teile = Math.abs(wert).toFixed(nachkomma).split(".");
+  teile[0] = teile[0].replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  return (wert < 0 ? "−" : "") + teile.join(".");
+}
+function geld(wert, mitVorzeichen) {
+  const w = zustand.waehrung || "CHF";
+  if (mitVorzeichen) {
+    const vz = wert >= 0 ? "+" : "−";
+    return `${vz}${formatZahlCH(Math.abs(wert))} ${w}`;
+  }
+  return `${formatZahlCH(wert)} ${w}`;
+}
+function geldGanz(wert) {
+  return `${formatZahlCH(wert, 0)} ${zustand.waehrung || "CHF"}`;
+}
+function neueId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+// ── Beispieldaten (nur beim allerersten Öffnen, klar markiert) ───────
+function beispielZustand() {
+  const heute = heuteISO();
+  const start = isoPlusTage(heute, -5);
+  const p = [
+    { id: "bsp-unterkunft", name: "Unterkunft", proTag: 120 },
+    { id: "bsp-essen", name: "Verpflegung", proTag: 60 },
+    { id: "bsp-transport", name: "Transport", proTag: 35 },
+    { id: "bsp-aktiv", name: "Aktivitäten", proTag: 40 },
+    { id: "bsp-div", name: "Diverses", proTag: 15 },
+  ];
+  const a = [];
+  const muster = [
+    [118, 72, 41, 0, 12], [118, 55, 18, 65, 9], [135, 64, 0, 38, 22],
+    [118, 81, 56, 0, 6], [118, 49, 23, 90, 31], [0, 27, 8, 0, 0],
+  ];
+  muster.forEach((tag, i) => {
+    tag.forEach((betrag, j) => {
+      if (betrag > 0) a.push({ id: `bsp-${i}-${j}`, datum: isoPlusTage(start, i), positionId: p[j].id, betrag });
+    });
+  });
+  return { waehrung: "CHF", start, ende: isoPlusTage(start, 20), tage: 21, positionen: p, ausgaben: a, beispiel: true };
+}
+function leererZustand() {
+  return { waehrung: "CHF", start: "", ende: "", tage: 0, positionen: [], ausgaben: [], beispiel: false };
+}
+function normalisiere(roh) {
+  const z = Object.assign(leererZustand(), roh || {});
+  z.positionen = Array.isArray(z.positionen) ? z.positionen : [];
+  z.ausgaben = Array.isArray(z.ausgaben) ? z.ausgaben : [];
+  z.tage = Number(z.tage) || 0;
+  return z;
+}
+
+// ── Speichern: lokal sofort, dann JSONBin (06.10.2026) ──────────────
+// localStorage zeigt die Daten sofort beim Öffnen und hält Änderungen,
+// falls gerade kein Netz da ist. JSONBin ist die gemeinsame Quelle für
+// Handy und PC. Sparsam mit dem JSONBin-Kontingent: eine Leseanfrage
+// beim Öffnen bzw. beim Zurückkehren in die App, eine Schreibanfrage pro
+// Änderung (gebündelt), kein Dauer-Polling.
+const BIN_ID = "6ac47c2dffd5d16053516a86";
+// Access-Key mit Lesen + Aktualisieren, nur auf diesen Bin begrenzt --
+// NIE den Master-Key hier eintragen (Repository ist öffentlich).
+const ACCESS_KEY = "$2a$10$wOv0GaWT1mMAQ5urdyvF3ejWNW3XW4Q/BlLZky6ZKm8OHjBto3NeO";
+const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+const AUSSTEHEND_KEY = SPEICHER_KEY + ".ausstehend";
+
+function lokalLaden() {
+  try { return JSON.parse(localStorage.getItem(SPEICHER_KEY) || "null"); } catch { return null; }
+}
+function lokalSpeichern() {
+  try { localStorage.setItem(SPEICHER_KEY, JSON.stringify(zustand)); } catch { /* privates Fenster o.ä. */ }
+}
+function setzeAusstehend(ja) {
+  try { ja ? localStorage.setItem(AUSSTEHEND_KEY, "1") : localStorage.removeItem(AUSSTEHEND_KEY); } catch { /* egal */ }
+}
+function istAusstehend() {
+  try { return localStorage.getItem(AUSSTEHEND_KEY) === "1"; } catch { return false; }
+}
+
+let zustand = normalisiere(lokalLaden() || leererZustand());
+let schreibtGerade = false;
+let schreibenAusstehend = false;
+let speicherText = "lädt …";
+
+function setzeSpeicherStand(text) {
+  speicherText = text;
+  document.getElementById("speicherStand").textContent = text;
+}
+
+async function jsonbinLesen() {
+  const antwort = await fetch(`${BIN_URL}/latest?_=${Date.now()}`, {
+    headers: { "X-Access-Key": ACCESS_KEY, "X-Bin-Meta": "false" },
+    cache: "no-store",
+  });
+  if (!antwort.ok) throw new Error(`HTTP ${antwort.status}`);
+  return await antwort.json();
+}
+
+async function jsonbinSchreiben() {
+  if (schreibtGerade) { schreibenAusstehend = true; return; }
+  schreibtGerade = true;
+  setzeSpeicherStand("speichert …");
+  try {
+    const antwort = await fetch(BIN_URL, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "X-Access-Key": ACCESS_KEY },
+      body: JSON.stringify(zustand),
+    });
+    if (!antwort.ok) throw new Error(`HTTP ${antwort.status}`);
+    setzeAusstehend(false);
+    setzeSpeicherStand("☁ gespeichert");
+  } catch (fehler) {
+    // Änderung bleibt lokal erhalten und wird beim nächsten Öffnen nachgeschoben
+    setzeAusstehend(true);
+    setzeSpeicherStand("⚠ offline – lokal gespeichert");
+    console.error("JSONBin-Schreiben fehlgeschlagen:", fehler);
+  } finally {
+    schreibtGerade = false;
+    if (schreibenAusstehend) { schreibenAusstehend = false; jsonbinSchreiben(); }
+  }
+}
+
+let schreibTimer = null;
+function speichere() {
+  zustand.beispiel = false;
+  lokalSpeichern();
+  setzeAusstehend(true);
+  renderAlles();
+  clearTimeout(schreibTimer);
+  schreibTimer = setTimeout(jsonbinSchreiben, 800);   // Tipp-Folgen bündeln
+}
+
+async function jsonbinSync() {
+  // Ungespeicherte lokale Änderungen (z.B. offline erfasst) haben Vorrang
+  if (istAusstehend()) { jsonbinSchreiben(); return; }
+  try {
+    const daten = await jsonbinLesen();
+    // Nicht überschreiben, während gerade eine eigene Änderung unterwegs ist
+    if (schreibtGerade || istAusstehend()) return;
+    zustand = normalisiere(daten);
+    lokalSpeichern();
+    renderAlles();
+    setzeSpeicherStand("☁ aktuell");
+  } catch (fehler) {
+    setzeSpeicherStand("⚠ offline – lokale Daten");
+    console.error("JSONBin-Lesen fehlgeschlagen:", fehler);
+  }
+}
+
+// Beim Zurückkehren in die App (z.B. am PC erfasst, jetzt am Handy) neu laden
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") jsonbinSync();
+});
+
+// ── Berechnungen ─────────────────────────────────────────────────────
+function berechne(z, heute) {
+  const tage = z.tage || 0;
+  const budgetProTag = z.positionen.reduce((s, p) => s + (Number(p.proTag) || 0), 0);
+  const budget = budgetProTag * tage;
+  const ist = z.ausgaben.reduce((s, a) => s + (Number(a.betrag) || 0), 0);
+
+  // Verbleibende Tage: heute zählt noch mit
+  let verbleibend = null;
+  if (z.start && z.ende) {
+    if (heute < z.start) verbleibend = tage;
+    else if (heute > z.ende) verbleibend = 0;
+    else verbleibend = tageZwischen(heute, z.ende) + 1;
+  }
+
+  // Vergangene Reisetage als Basis für den Durchschnitt. Ohne Startdatum
+  // (oder vor Reisebeginn) zählen die Tage, an denen Ausgaben erfasst sind.
+  const ausgabeTage = new Set(z.ausgaben.map(a => a.datum)).size;
+  let vergangen = 0;
+  if (z.start && heute >= z.start) {
+    vergangen = Math.min(tageZwischen(z.start, heute) + 1, tage || Infinity);
+  }
+  if (vergangen === 0) vergangen = ausgabeTage;
+  const schnitt = vergangen > 0 ? ist / vergangen : 0;
+  const forecast = schnitt * tage;
+
+  return { tage, budgetProTag, budget, ist, delta: budget - ist, verbleibend, vergangen, schnitt, forecast };
+}
+
+// ── Rendern ──────────────────────────────────────────────────────────
+function setzeZahl(id, text, klasse) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.classList.remove("pos", "neg");
+  if (klasse) el.classList.add(klasse);
+}
+function setzeWertWennFrei(id, wert) {
+  const el = document.getElementById(id);
+  if (document.activeElement !== el) el.value = wert;
+}
+
+function renderAlles() {
+  const heute = heuteISO();
+  const k = berechne(zustand, heute);
+
+  document.getElementById("beispielHinweis").hidden = !zustand.beispiel;
+  document.getElementById("reiseZeitraum").textContent = (zustand.start && zustand.ende)
+    ? `${datumKurz(zustand.start, true)} – ${datumKurz(zustand.ende, true)} · ${k.tage} Tage`
+    : (k.tage ? `${k.tage} Tage` : "Reisedauer im Register Budget festlegen");
+
+  // Dashboard
+  setzeZahl("dBudget", geld(k.budget));
+  document.getElementById("dBudgetZusatz").textContent = k.tage
+    ? `${geld(k.budgetProTag)} je Tag × ${k.tage}` : "Reisedauer fehlt";
+  setzeZahl("dIst", geld(k.ist));
+  document.getElementById("dIstZusatz").textContent = k.budget > 0
+    ? `${formatZahlCH(k.ist / k.budget * 100, 0)} % des Budgets verbraucht` : "";
+  setzeZahl("dDelta", geld(k.delta, true), k.delta >= 0 ? "pos" : "neg");
+  setzeZahl("dSchnitt", geld(k.schnitt), k.budgetProTag > 0 ? (k.schnitt <= k.budgetProTag ? "pos" : "neg") : null);
+  document.getElementById("dSchnittZusatz").textContent = k.vergangen
+    ? `über ${k.vergangen} Tag${k.vergangen === 1 ? "" : "e"}` : "noch keine Tage";
+  setzeZahl("dForecast", geld(k.forecast), k.budget > 0 ? (k.forecast <= k.budget ? "pos" : "neg") : null);
+  document.getElementById("dForecastZusatz").textContent = k.tage
+    ? `Ø × ${k.tage} Tage` : "Reisedauer fehlt";
+
+  // Budget
+  setzeZahl("bSumme", geld(k.budget));
+  setzeZahl("bTage", k.tage ? String(k.tage) : "–");
+  setzeZahl("bVerbleibend", k.verbleibend === null ? "–" : String(k.verbleibend));
+  document.getElementById("bVerbleibendZusatz").textContent = k.verbleibend === null
+    ? "Start/Ende fehlen" : (heute < zustand.start ? "Reise noch nicht begonnen" : "inkl. heute");
+  setzeWertWennFrei("reiseStart", zustand.start || "");
+  setzeWertWennFrei("reiseEnde", zustand.ende || "");
+  setzeWertWennFrei("reiseTage", k.tage || "");
+  setzeWertWennFrei("reiseWaehrung", zustand.waehrung || "CHF");
+  renderPositionen(k);
+  aktualisierePositionVorschau();
+
+  // Ausgaben
+  setzeZahl("aSumme", geld(k.ist));
+  const heuteSumme = zustand.ausgaben.filter(a => a.datum === heute).reduce((s, a) => s + Number(a.betrag), 0);
+  setzeZahl("aHeute", geld(heuteSumme));
+  setzeZahl("aAnzahl", String(zustand.ausgaben.length));
+  renderPositionAuswahl();
+  renderAusgaben();
+
+  zeichneDiagramm(k);
+}
+
+// ── Zweistufiges Löschen (Viewer zeigt kein confirm()) ───────────────
+function loeschKnopf(beimBestaetigen, hinweis) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn-loeschen";
+  btn.textContent = "✕";
+  btn.title = "Löschen";
+  let timer = null;
+  btn.addEventListener("click", () => {
+    if (btn.classList.contains("bestaetigen")) {
+      clearTimeout(timer);
+      beimBestaetigen();
+      return;
+    }
+    btn.classList.add("bestaetigen");
+    btn.textContent = hinweis || "Löschen?";
+    timer = setTimeout(() => {
+      btn.classList.remove("bestaetigen");
+      btn.textContent = "✕";
+    }, 3500);
+  });
+  return btn;
+}
+function bearbeitenKnopf(beimKlick) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn-bearbeiten";
+  btn.textContent = "✎";
+  btn.title = "Bearbeiten";
+  btn.addEventListener("click", beimKlick);
+  return btn;
+}
+
+// ── Reisedauer ───────────────────────────────────────────────────────
+function datumGeaendert() {
+  const start = document.getElementById("reiseStart").value;
+  let ende = document.getElementById("reiseEnde").value;
+  const hinweis = document.getElementById("dauerHinweis");
+  zustand.start = start;
+  zustand.ende = ende;
+  if (start && ende) {
+    const diff = tageZwischen(start, ende);
+    if (diff < 0) {
+      hinweis.textContent = "Das Ende liegt vor dem Start. Bitte das Datum prüfen.";
+      hinweis.classList.add("neg");
+      zustand.ende = "";
+      speichere();
+      return;
+    }
+    zustand.tage = diff + 1;
+  } else if (start && zustand.tage > 0) {
+    // Nur Start gesetzt: Ende aus der bereits bekannten Dauer ableiten
+    zustand.ende = isoPlusTage(start, zustand.tage - 1);
+  }
+  hinweis.textContent = "Start und Ende setzen die Tage automatisch (beide Tage zählen mit).";
+  hinweis.classList.remove("neg");
+  speichere();
+}
+document.getElementById("reiseStart").addEventListener("change", datumGeaendert);
+document.getElementById("reiseEnde").addEventListener("change", datumGeaendert);
+document.getElementById("reiseTage").addEventListener("change", (e) => {
+  const tage = Math.max(0, Math.round(Number(e.target.value) || 0));
+  zustand.tage = tage;
+  // Manuell gesetzte Dauer verschiebt das Ende passend zum Start
+  if (zustand.start && tage > 0) zustand.ende = isoPlusTage(zustand.start, tage - 1);
+  speichere();
+});
+document.getElementById("reiseWaehrung").addEventListener("change", (e) => {
+  zustand.waehrung = (e.target.value || "CHF").trim().toUpperCase().slice(0, 5) || "CHF";
+  speichere();
+});
+
+// ── Budgetpositionen ─────────────────────────────────────────────────
+let positionBearbeitungsId = null;
+
+function renderPositionen(k) {
+  const tbody = document.getElementById("positionenTabelle");
+  const tfoot = document.getElementById("positionenFuss");
+  tbody.innerHTML = "";
+  tfoot.innerHTML = "";
+  document.getElementById("positionenLeer").hidden = zustand.positionen.length > 0;
+
+  for (const p of zustand.positionen) {
+    const tr = document.createElement("tr");
+    if (p.id === positionBearbeitungsId) tr.className = "in-bearbeitung";
+    const name = document.createElement("td");
+    name.textContent = p.name;
+    tr.appendChild(name);
+    tr.insertAdjacentHTML("beforeend", `
+      <td class="zahl-spalte">${formatZahlCH(Number(p.proTag))}</td>
+      <td class="zahl-spalte">${formatZahlCH(Number(p.proTag) * k.tage)}</td>`);
+    const aktionen = document.createElement("td");
+    aktionen.className = "aktionen-spalte";
+    const anzahlVerwendet = zustand.ausgaben.filter(a => a.positionId === p.id).length;
+    aktionen.append(
+      bearbeitenKnopf(() => bearbeitePosition(p.id)),
+      loeschKnopf(() => loeschePosition(p.id), anzahlVerwendet ? `Löschen? (${anzahlVerwendet} Ausg.)` : "Löschen?")
+    );
+    tr.appendChild(aktionen);
+    tbody.appendChild(tr);
+  }
+  if (zustand.positionen.length) {
+    tfoot.innerHTML = `
+      <tr>
+        <td>Total</td>
+        <td class="zahl-spalte">${formatZahlCH(k.budgetProTag)}</td>
+        <td class="zahl-spalte">${formatZahlCH(k.budget)}</td>
+        <td></td>
+      </tr>`;
+  }
+}
+
+function aktualisierePositionVorschau() {
+  const proTag = Number(document.getElementById("positionProTag").value) || 0;
+  const tage = zustand.tage || 0;
+  document.getElementById("positionVorschau").innerHTML = tage
+    ? `Summe je Dauer: <strong>${geld(proTag * tage)}</strong> (${tage} Tage)`
+    : "Summe je Dauer: zuerst die Reisedauer festlegen.";
+}
+document.getElementById("positionProTag").addEventListener("input", aktualisierePositionVorschau);
+
+function bearbeitePosition(id) {
+  const p = zustand.positionen.find(x => x.id === id);
+  if (!p) return;
+  positionBearbeitungsId = id;
+  document.getElementById("positionName").value = p.name;
+  document.getElementById("positionProTag").value = p.proTag;
+  document.getElementById("positionFormularTitel").textContent = "Budgetposition bearbeiten";
+  document.getElementById("positionSpeichern").textContent = "Änderung speichern";
+  document.getElementById("positionAbbrechen").hidden = false;
+  renderAlles();
+  document.getElementById("positionFormularTitel").scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById("positionName").focus({ preventScroll: true });
+}
+function positionFormularZuruecksetzen() {
+  positionBearbeitungsId = null;
+  document.getElementById("positionName").value = "";
+  document.getElementById("positionProTag").value = "";
+  document.getElementById("positionFormularTitel").textContent = "Budgetposition erfassen";
+  document.getElementById("positionSpeichern").textContent = "Position hinzufügen";
+  document.getElementById("positionAbbrechen").hidden = true;
+  document.getElementById("positionMeldung").hidden = true;
+}
+function loeschePosition(id) {
+  zustand.positionen = zustand.positionen.filter(p => p.id !== id);
+  if (positionBearbeitungsId === id) positionFormularZuruecksetzen();
+  speichere();
+}
+document.getElementById("positionFormular").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const name = document.getElementById("positionName").value.trim();
+  const proTagRoh = document.getElementById("positionProTag").value;
+  const proTag = Number(proTagRoh);
+  const meldung = document.getElementById("positionMeldung");
+  let fehler = "";
+  if (!name) fehler = "Bitte einen Positionsnamen eingeben.";
+  else if (proTagRoh === "" || !(proTag >= 0)) fehler = "Bitte einen Betrag je Tag eingeben (0 oder mehr).";
+  else if (zustand.positionen.some(p => p.name.toLowerCase() === name.toLowerCase() && p.id !== positionBearbeitungsId))
+    fehler = `Die Position „${name}" gibt es schon.`;
+  if (fehler) { meldung.textContent = fehler; meldung.hidden = false; return; }
+
+  if (positionBearbeitungsId) {
+    const p = zustand.positionen.find(x => x.id === positionBearbeitungsId);
+    if (p) { p.name = name; p.proTag = proTag; }
+  } else {
+    zustand.positionen.push({ id: neueId(), name, proTag });
+  }
+  positionFormularZuruecksetzen();
+  speichere();
+});
+document.getElementById("positionAbbrechen").addEventListener("click", () => {
+  positionFormularZuruecksetzen();
+  renderAlles();
+});
+
+// ── Ausgaben ─────────────────────────────────────────────────────────
+let ausgabeBearbeitungsId = null;
+
+function positionName(id) {
+  const p = zustand.positionen.find(x => x.id === id);
+  return p ? p.name : null;
+}
+
+function renderPositionAuswahl() {
+  const select = document.getElementById("ausgabePosition");
+  const bisher = select.value;
+  select.innerHTML = "";
+  if (!zustand.positionen.length) {
+    select.add(new Option("Erst im Register Budget eine Position anlegen", ""));
+    select.disabled = true;
+    return;
+  }
+  select.disabled = false;
+  select.add(new Option("Position wählen …", ""));
+  for (const p of zustand.positionen) select.add(new Option(p.name, p.id));
+  if (zustand.positionen.some(p => p.id === bisher)) select.value = bisher;
+}
+
+function renderAusgaben() {
+  const tbody = document.getElementById("ausgabenTabelle");
+  tbody.innerHTML = "";
+  document.getElementById("ausgabenLeer").hidden = zustand.ausgaben.length > 0;
+  const sortiert = [...zustand.ausgaben].sort((a, b) => b.datum.localeCompare(a.datum));
+  for (const a of sortiert) {
+    const tr = document.createElement("tr");
+    if (a.id === ausgabeBearbeitungsId) tr.className = "in-bearbeitung";
+    const datum = document.createElement("td");
+    datum.textContent = datumKurz(a.datum, true);
+    // 06.10.2026: Positionsname direkt in der Zeile als Auswahlfeld --
+    // Umbuchen auf eine andere Position ohne Umweg über das Formular.
+    const pos = document.createElement("td");
+    const name = positionName(a.positionId);
+    const huelle = document.createElement("span");
+    huelle.className = "auswahl-huelle auswahl-klein";
+    const auswahl = document.createElement("select");
+    auswahl.id = `ausgabePos-${a.id}`;
+    auswahl.className = "tabelle-auswahl" + (name ? "" : " ohne-position");
+    auswahl.setAttribute("aria-label", "Positionsname");
+    if (!name) {
+      const leer = new Option("ohne Position", "");
+      leer.disabled = true;
+      auswahl.add(leer);
+    }
+    for (const p of zustand.positionen) auswahl.add(new Option(p.name, p.id));
+    auswahl.value = name ? a.positionId : "";
+    auswahl.addEventListener("change", () => {
+      const eintrag = zustand.ausgaben.find(x => x.id === a.id);
+      if (eintrag && auswahl.value) { eintrag.positionId = auswahl.value; speichere(); }
+    });
+    huelle.appendChild(auswahl);
+    pos.appendChild(huelle);
+    const betrag = document.createElement("td");
+    betrag.className = "zahl-spalte";
+    betrag.textContent = formatZahlCH(Number(a.betrag));
+    const aktionen = document.createElement("td");
+    aktionen.className = "aktionen-spalte";
+    aktionen.append(bearbeitenKnopf(() => bearbeiteAusgabe(a.id)), loeschKnopf(() => loescheAusgabe(a.id)));
+    tr.append(datum, pos, betrag, aktionen);
+    tbody.appendChild(tr);
+  }
+}
+
+function bearbeiteAusgabe(id) {
+  const a = zustand.ausgaben.find(x => x.id === id);
+  if (!a) return;
+  ausgabeBearbeitungsId = id;
+  document.getElementById("ausgabeDatum").value = a.datum;
+  document.getElementById("ausgabeBetrag").value = a.betrag;
+  renderPositionAuswahl();
+  document.getElementById("ausgabePosition").value = positionName(a.positionId) ? a.positionId : "";
+  document.getElementById("ausgabeFormularTitel").textContent = "Ausgabe bearbeiten";
+  document.getElementById("ausgabeSpeichern").textContent = "Änderung speichern";
+  document.getElementById("ausgabeAbbrechen").hidden = false;
+  renderAusgaben();
+  document.getElementById("ausgabeFormularTitel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function ausgabeFormularZuruecksetzen() {
+  ausgabeBearbeitungsId = null;
+  document.getElementById("ausgabeDatum").value = heuteISO();
+  document.getElementById("ausgabeBetrag").value = "";
+  document.getElementById("ausgabeFormularTitel").textContent = "Ausgabe erfassen";
+  document.getElementById("ausgabeSpeichern").textContent = "Ausgabe hinzufügen";
+  document.getElementById("ausgabeAbbrechen").hidden = true;
+  document.getElementById("ausgabeMeldung").hidden = true;
+}
+function loescheAusgabe(id) {
+  zustand.ausgaben = zustand.ausgaben.filter(a => a.id !== id);
+  if (ausgabeBearbeitungsId === id) ausgabeFormularZuruecksetzen();
+  speichere();
+}
+document.getElementById("ausgabeFormular").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const datum = document.getElementById("ausgabeDatum").value;
+  const positionId = document.getElementById("ausgabePosition").value;
+  const betragRoh = document.getElementById("ausgabeBetrag").value;
+  const betrag = Number(betragRoh);
+  const meldung = document.getElementById("ausgabeMeldung");
+  let fehler = "";
+  if (!zustand.positionen.length) fehler = "Lege zuerst im Register Budget eine Budgetposition an.";
+  else if (!datum) fehler = "Bitte ein Datum wählen.";
+  else if (!positionId) fehler = "Bitte einen Positionsnamen wählen.";
+  else if (betragRoh === "" || !(betrag > 0)) fehler = "Bitte einen Betrag grösser als 0 eingeben.";
+  if (fehler) { meldung.textContent = fehler; meldung.hidden = false; return; }
+
+  if (ausgabeBearbeitungsId) {
+    const a = zustand.ausgaben.find(x => x.id === ausgabeBearbeitungsId);
+    if (a) { a.datum = datum; a.positionId = positionId; a.betrag = betrag; }
+  } else {
+    zustand.ausgaben.push({ id: neueId(), datum, positionId, betrag });
+  }
+  // Datum und Position bleiben für die nächste Erfassung stehen
+  const letztesDatum = datum;
+  ausgabeFormularZuruecksetzen();
+  document.getElementById("ausgabeDatum").value = letztesDatum;
+  speichere();
+  document.getElementById("ausgabeBetrag").focus({ preventScroll: true });
+});
+document.getElementById("ausgabeAbbrechen").addEventListener("click", () => {
+  ausgabeFormularZuruecksetzen();
+  renderAusgaben();
+});
+
+// ── Balkendiagramm: Ist-Kosten je Reisetag (reines SVG) ──────────────
+// Zeichnet in echten Pixeln der aktuellen Breite (nicht per viewBox
+// skaliert), damit die Beschriftung auf dem Handy lesbar bleibt.
+let ausgewaehlterTag = null;
+
+function diagrammTage() {
+  if (zustand.start && zustand.tage > 0) {
+    return Array.from({ length: Math.min(zustand.tage, 120) }, (_, i) => isoPlusTage(zustand.start, i));
+  }
+  const daten = [...new Set(zustand.ausgaben.map(a => a.datum))].sort();
+  if (!daten.length) return [];
+  const n = Math.min(tageZwischen(daten[0], daten[daten.length - 1]) + 1, 120);
+  return Array.from({ length: n }, (_, i) => isoPlusTage(daten[0], i));
+}
+
+function zeichneDiagramm(k) {
+  const svg = document.getElementById("tagesDiagramm");
+  const auswahl = document.getElementById("diagrammAuswahl");
+  svg.innerHTML = "";
+  const breite = svg.clientWidth || 340;
+  const hoehe = 230;
+  svg.setAttribute("viewBox", `0 0 ${breite} ${hoehe}`);
+
+  const tage = diagrammTage();
+  const svgNS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, text) => {
+    const e = document.createElementNS(svgNS, tag);
+    for (const [key, v] of Object.entries(attrs)) {
+      // CSS-Variablen wirken nur über style, nicht als SVG-Attribut
+      if (String(v).includes("var(") || key === "font-variant-numeric") e.style.setProperty(key, v);
+      else e.setAttribute(key, v);
+    }
+    if (text !== undefined) e.textContent = text;
+    svg.appendChild(e);
+    return e;
+  };
+
+  if (!tage.length) {
+    el("text", { x: breite / 2, y: hoehe / 2, fill: "var(--text-dim)", "font-size": "13", "text-anchor": "middle" },
+      "Noch keine Daten: Reisedauer oder Ausgaben erfassen.");
+    auswahl.textContent = "";
+    return;
+  }
+
+  const jeTag = {};
+  for (const a of zustand.ausgaben) jeTag[a.datum] = (jeTag[a.datum] || 0) + Number(a.betrag);
+  const werte = tage.map(d => jeTag[d] || 0);
+  const tagesBudget = k.budgetProTag;
+
+  // Achse: runde Obergrenze über dem höchsten Wert bzw. dem Tagesbudget
+  const rohMax = Math.max(1, tagesBudget, ...werte);
+  const schritt = Math.pow(10, Math.floor(Math.log10(rohMax)));
+  const yMax = Math.ceil(rohMax * 1.1 / (schritt / 2)) * (schritt / 2);
+
+  const links = 44, rechts = breite - 8, oben = 10, unten = hoehe - 26;
+  const plotH = unten - oben;
+  const y = v => unten - (v / yMax) * plotH;
+  const slot = (rechts - links) / tage.length;
+  const balkenB = Math.max(2, Math.min(28, slot * 0.68));
+
+  // Raster + Achsenwerte (3 Linien)
+  for (let i = 0; i <= 3; i++) {
+    const v = (yMax / 3) * i;
+    el("line", { x1: links, x2: rechts, y1: y(v), y2: y(v), stroke: "var(--border)", "stroke-width": "1" });
+    el("text", { x: links - 6, y: y(v) + 4, fill: "var(--text-dim)", "font-size": "10.5", "text-anchor": "end",
+      "font-variant-numeric": "tabular-nums" }, formatZahlCH(v, 0));
+  }
+
+  const heute = heuteISO();
+  const beschriftungJede = Math.ceil(tage.length / Math.max(1, Math.floor((rechts - links) / 34)));
+
+  tage.forEach((datum, i) => {
+    const x = links + i * slot;
+    const wert = werte[i];
+    const istAusgewaehlt = datum === ausgewaehlterTag;
+
+    const flaeche = el("rect", { x, y: oben, width: slot, height: plotH + 24,
+      fill: istAusgewaehlt ? "var(--bg-panel-2)" : "transparent" });
+    flaeche.style.cursor = "pointer";
+    flaeche.addEventListener("click", () => {
+      ausgewaehlterTag = ausgewaehlterTag === datum ? null : datum;
+      zeichneDiagramm(berechne(zustand, heuteISO()));
+    });
+
+    if (wert > 0) {
+      const ueber = tagesBudget > 0 && wert > tagesBudget;
+      const balken = el("rect", {
+        x: x + (slot - balkenB) / 2, y: y(wert), width: balkenB, height: Math.max(1, unten - y(wert)),
+        rx: Math.min(3, balkenB / 3), fill: ueber ? "var(--neg)" : "var(--accent)",
+        opacity: datum > heute ? "0.5" : "1",
+      });
+      balken.style.pointerEvents = "none";
+    }
+
+    if (i % beschriftungJede === 0 || istAusgewaehlt) {
+      const d = new Date(datum + "T00:00:00");
+      const t = el("text", {
+        x: x + slot / 2, y: hoehe - 9, "text-anchor": "middle", "font-size": "10.5",
+        fill: istAusgewaehlt || datum === heute ? "var(--text)" : "var(--text-dim)",
+        "font-weight": istAusgewaehlt || datum === heute ? "700" : "400",
+      }, `${d.getDate()}.${d.getMonth() + 1}.`);
+      t.style.pointerEvents = "none";
+    }
+  });
+
+  // Tagesbudget als gestrichelte Linie
+  if (tagesBudget > 0) {
+    const l = el("line", { x1: links, x2: rechts, y1: y(tagesBudget), y2: y(tagesBudget),
+      stroke: "var(--accent)", "stroke-width": "1.5", "stroke-dasharray": "5 4" });
+    l.style.pointerEvents = "none";
+  }
+  // Heute markieren
+  const heuteIndex = tage.indexOf(heute);
+  if (heuteIndex >= 0) {
+    const hx = links + heuteIndex * slot + slot / 2;
+    const m = el("line", { x1: hx, x2: hx, y1: oben, y2: unten, stroke: "var(--text-dim)",
+      "stroke-width": "1", "stroke-dasharray": "2 3", opacity: "0.6" });
+    m.style.pointerEvents = "none";
+  }
+
+  // Detail zum gewählten Tag
+  if (ausgewaehlterTag && tage.includes(ausgewaehlterTag)) {
+    const wert = jeTag[ausgewaehlterTag] || 0;
+    const posten = zustand.ausgaben.filter(a => a.datum === ausgewaehlterTag);
+    const differenz = tagesBudget - wert;
+    auswahl.innerHTML = `<strong>${datumKurz(ausgewaehlterTag, true)}</strong> · ${geld(wert)}`
+      + (tagesBudget > 0 ? ` · <span class="${differenz >= 0 ? "pos" : "neg"}">${geld(differenz, true)}</span> zum Tagesbudget` : "")
+      + ` · ${posten.length} Ausgabe${posten.length === 1 ? "" : "n"}`;
+  } else {
+    auswahl.textContent = "Tippe auf einen Tag für Details.";
+  }
+}
+
+// ── Beispieldaten verwerfen ──────────────────────────────────────────
+document.getElementById("leerBeginnen").addEventListener("click", () => {
+  zustand = leererZustand();
+  positionFormularZuruecksetzen();
+  ausgabeFormularZuruecksetzen();
+  speichere();
+});
+
+// ── Register-Umschaltung + Tabbar-Einbuchtung (wie Tinu-Trading) ─────
+function positioniereWelle() {
+  const aktiverBtn = document.querySelector(".tab-btn.aktiv");
+  const bar = document.getElementById("tabBar");
+  if (!aktiverBtn || !bar) return;
+  const btnRect = aktiverBtn.getBoundingClientRect();
+  const barRect = bar.getBoundingClientRect();
+  const mitteX = btnRect.left + btnRect.width / 2 - barRect.left;
+  bar.style.setProperty("--tab-x", `${mitteX}px`);
+  zeichnePlattenPfad(barRect.width, mitteX);
+}
+function zeichnePlattenPfad(breite, cx) {
+  const svg = document.getElementById("tabBarPlatte");
+  const pfad = document.getElementById("tabBarPfad");
+  if (!svg || !pfad || !breite) return;
+  svg.setAttribute("viewBox", `0 0 ${breite} 62`);
+  const r = 42, schulter = 14, tiefe = r * 0.6;
+  const linkAussen = Math.max(cx - r - schulter, 0);
+  const linkInnen = cx - r;
+  const rechtsInnen = cx + r;
+  const rechtsAussen = Math.min(cx + r + schulter, breite);
+  pfad.setAttribute("d", `
+    M 0,0 L ${linkAussen},0
+    C ${linkAussen + schulter * 0.6},0 ${linkInnen},${tiefe * 0.6} ${linkInnen},${tiefe}
+    A ${r},${r} 0 0 0 ${rechtsInnen},${tiefe}
+    C ${rechtsInnen},${tiefe * 0.6} ${rechtsAussen - schulter * 0.6},0 ${rechtsAussen},0
+    L ${breite},0 L ${breite},62 L 0,62 Z`);
+}
+
+function zeigeRegister(name) {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("aktiv", b.dataset.register === name));
+  document.querySelectorAll(".register").forEach(r => r.classList.toggle("aktiv", r.id === `register-${name}`));
+  positioniereWelle();
+  if (name === "dashboard") zeichneDiagramm(berechne(zustand, heuteISO()));
+  try { localStorage.setItem(SPEICHER_KEY + ".register", name); } catch { /* egal */ }
+  window.scrollTo({ top: 0 });
+}
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => zeigeRegister(btn.dataset.register));
+});
+
+let resizeTimer = null;
+window.addEventListener("resize", () => {
+  positioniereWelle();
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => zeichneDiagramm(berechne(zustand, heuteISO())), 120);
+});
+window.addEventListener("load", positioniereWelle);
+
+// ── Start ────────────────────────────────────────────────────────────
+ausgabeFormularZuruecksetzen();
+setzeSpeicherStand(speicherText);
+renderAlles();
+let startRegister = "dashboard";
+try { startRegister = localStorage.getItem(SPEICHER_KEY + ".register") || "dashboard"; } catch { /* egal */ }
+if (["dashboard", "budget", "ausgaben"].includes(startRegister)) zeigeRegister(startRegister);
+positioniereWelle();
+jsonbinSync();
+</script>
+</body>
+</html>
