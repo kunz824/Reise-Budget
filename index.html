@@ -105,6 +105,47 @@
   .stat-gross { padding: 12px 14px 13px; }
   .stat-gross .zahl { font-size: 26px; letter-spacing: -0.02em; }
 
+  /* Kontokachel im Dashboard (11.10.2026) */
+  .konto-kachel { margin-bottom: 6px; }
+  .konto-kopf { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; }
+  .konto-kopf > div { min-width: 0; }
+  .konto-werte {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 9px;
+    border-top: 1px solid var(--border);
+  }
+  .konto-werte .label { margin: 0 0 2px; }
+  .konto-werte .wert {
+    font-size: 13.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .konto-balken {
+    position: relative;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--bg);
+    margin-top: 10px;
+    overflow: hidden;
+  }
+  .konto-balken-ist { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 3px; }
+  .konto-balken-forecast {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    width: 2px;
+    background: var(--text);
+    opacity: 0.8;
+  }
+  .konto-balken.ueberzogen .konto-balken-ist { background: var(--neg); }
+
   .pos { color: var(--pos); }
   .neg { color: var(--neg); }
 
@@ -370,7 +411,7 @@
     gap: 6px;
     padding: 0 8px;
     flex: 1;
-    max-width: 110px;
+    max-width: 96px;
     position: relative;
     z-index: 2;
     transition: transform 0.25s ease;
@@ -387,7 +428,7 @@
     filter: grayscale(1) opacity(0.75);
   }
   .tab-btn.aktiv .tab-icon { transform: translateY(2px) scale(1.05); filter: none; }
-  .tab-label { font-size: 10.5px; color: var(--text-dim); white-space: nowrap; }
+  .tab-label { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
   .tab-btn.aktiv .tab-label { color: var(--text); font-weight: 600; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -433,6 +474,26 @@
         <p class="label">Forecast</p>
         <p class="zahl" id="dForecast">–</p>
         <p class="zusatz" id="dForecastZusatz"></p>
+      </div>
+    </div>
+
+    <!-- Kontokachel: Kontostand = Einzahlungen − Ist; Abgleich mit Forecast -->
+    <div class="stat stat-gross konto-kachel" id="kontoKachel">
+      <div class="konto-kopf">
+        <div>
+          <p class="label">Kontostand</p>
+          <p class="zahl" id="dKontostand">–</p>
+        </div>
+        <p class="zusatz" id="dKontoZusatz" style="text-align:right"></p>
+      </div>
+      <div class="konto-balken" id="dKontoBalken" aria-hidden="true">
+        <span class="konto-balken-ist" id="dKontoBalkenIst" style="width:0%"></span>
+        <span class="konto-balken-forecast" id="dKontoBalkenForecast" hidden></span>
+      </div>
+      <div class="konto-werte">
+        <div><p class="label">Konto</p><p class="wert" id="dKonto">–</p></div>
+        <div><p class="label">Ist</p><p class="wert" id="dKontoIst">–</p></div>
+        <div><p class="label">Reserve Reiseende</p><p class="wert" id="dKontoReserve">–</p></div>
       </div>
     </div>
 
@@ -515,7 +576,65 @@
     </div>
   </section>
 
-  <!-- ── Register 3: Ausgaben ──────────────────────────────────────── -->
+  <!-- ── Register 3: Konto (11.10.2026) ────────────────────────────── -->
+  <!-- Beträge, die für die Reise zur Verfügung stehen (Einzahlungen),
+       ohne Budgetpositionen. Immer in CHF. -->
+  <section id="register-konto" class="register">
+    <div class="stats-reihe" style="--spalten:3;">
+      <div class="stat">
+        <p class="label">Konto gesamt</p>
+        <p class="zahl" id="kSumme">–</p>
+      </div>
+      <div class="stat">
+        <p class="label">Ist-Kosten</p>
+        <p class="zahl" id="kIst">–</p>
+      </div>
+      <div class="stat">
+        <p class="label">Kontostand</p>
+        <p class="zahl" id="kStand">–</p>
+      </div>
+    </div>
+
+    <h2 id="kontoFormularTitel">Betrag erfassen</h2>
+    <form class="formular" id="kontoFormular" novalidate>
+      <div class="formular-reihe">
+        <label>Datum
+          <input type="date" id="kontoDatum">
+        </label>
+        <label>Betrag (CHF)
+          <input type="number" id="kontoBetrag" placeholder="0.00" step="0.05" inputmode="decimal">
+        </label>
+      </div>
+      <label>Bezeichnung
+        <input type="text" id="kontoText" placeholder="z.B. Einzahlung Reisekonto" autocomplete="off" maxlength="50">
+      </label>
+      <p class="vorschau">Negativer Betrag für eine Rückbuchung, z.B. −200.</p>
+      <p class="formular-meldung" id="kontoMeldung" hidden></p>
+      <div class="formular-buttons">
+        <button type="submit" class="btn-speichern" id="kontoSpeichern">Betrag hinzufügen</button>
+        <button type="button" class="btn-abbrechen" id="kontoAbbrechen" hidden>Abbrechen</button>
+      </div>
+    </form>
+
+    <h2>Kontobewegungen (CHF)</h2>
+    <div class="tabelle-karte tabelle-kompakt">
+      <table>
+        <thead>
+          <tr>
+            <th>Datum</th>
+            <th>Bezeichnung</th>
+            <th class="zahl-spalte">Betrag</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="kontoTabelle"></tbody>
+        <tfoot id="kontoFuss"></tfoot>
+      </table>
+      <p class="leer" id="kontoLeer" hidden>Noch kein Betrag erfasst. Erfasse oben, was für die Reise zur Verfügung steht.</p>
+    </div>
+  </section>
+
+  <!-- ── Register 4: Ausgaben ──────────────────────────────────────── -->
   <section id="register-ausgaben" class="register">
     <div class="stats-reihe" style="--spalten:3;">
       <div class="stat">
@@ -593,13 +712,17 @@
     <span class="tab-icon" aria-hidden="true">📊</span>
     <span class="tab-label">Dashboard</span>
   </button>
+  <button class="tab-btn" data-register="ausgaben" type="button">
+    <span class="tab-icon" aria-hidden="true">🧾</span>
+    <span class="tab-label">Ausgaben</span>
+  </button>
   <button class="tab-btn" data-register="budget" type="button">
     <span class="tab-icon" aria-hidden="true">🧮</span>
     <span class="tab-label">Budget</span>
   </button>
-  <button class="tab-btn" data-register="ausgaben" type="button">
-    <span class="tab-icon" aria-hidden="true">🧾</span>
-    <span class="tab-label">Ausgaben</span>
+  <button class="tab-btn" data-register="konto" type="button">
+    <span class="tab-icon" aria-hidden="true">🏦</span>
+    <span class="tab-label">Konto</span>
   </button>
 </nav>
 
@@ -610,6 +733,7 @@
 //   positionen: [{id, name, proTag}],                    -- proTag in CHF
 //   ausgaben:   [{id, datum, positionId, betrag,         -- betrag in CHF
 //                 betragOrig, waehrung, kurs}],          -- Originalbeleg
+//   konto:      [{id, datum, text, betrag}],             -- CHF, zur Verfügung
 //   kurse:      {EUR: 0.93, ...},                        -- letzte Kurse (offline)
 //   letzteWaehrung: "EUR" }
 // Hauswährung ist immer CHF (06.10.2026): Dashboard und Budget rechnen
@@ -676,7 +800,7 @@ function neueId() {
 }
 
 function leererZustand() {
-  return { beschreibung: "", start: "", ende: "", tage: 0, positionen: [], ausgaben: [], kurse: {}, letzteWaehrung: HAUSWAEHRUNG };
+  return { beschreibung: "", start: "", ende: "", tage: 0, positionen: [], ausgaben: [], konto: [], kurse: {}, letzteWaehrung: HAUSWAEHRUNG };
 }
 function normalisiere(roh) {
   const z = Object.assign(leererZustand(), roh || {});
@@ -688,6 +812,7 @@ function normalisiere(roh) {
     const waehrung = a.waehrung || HAUSWAEHRUNG;
     return Object.assign({ waehrung, betragOrig: Number(a.betrag) || 0, kurs: 1 }, a, { waehrung });
   });
+  z.konto = Array.isArray(z.konto) ? z.konto : [];
   z.kurse = (z.kurse && typeof z.kurse === "object") ? z.kurse : {};
   z.tage = Number(z.tage) || 0;
   z.beschreibung = typeof z.beschreibung === "string" ? z.beschreibung : "";
@@ -822,7 +947,14 @@ function berechne(z, heute) {
   const schnitt = vergangen > 0 ? ist / vergangen : 0;
   const forecast = schnitt * tage;
 
-  return { tage, budgetProTag, budget, ist, delta: budget - ist, verbleibend, vergangen, schnitt, forecast };
+  // Konto-Abgleich: was steht zur Verfügung, was ist schon weg, was
+  // bleibt am Reiseende, wenn der bisherige Tagesschnitt so weitergeht.
+  const konto = z.konto.reduce((s, b) => s + (Number(b.betrag) || 0), 0);
+  const kontostand = konto - ist;
+  const reserveEnde = konto - Math.max(forecast, ist);
+
+  return { tage, budgetProTag, budget, ist, delta: budget - ist, verbleibend, vergangen, schnitt, forecast,
+           konto, kontostand, reserveEnde };
 }
 
 // ── Rendern ──────────────────────────────────────────────────────────
@@ -861,6 +993,9 @@ function renderAlles() {
   setzeZahl("dForecast", zahl(k.forecast), k.budget > 0 ? (k.forecast <= k.budget ? "pos" : "neg") : null);
   document.getElementById("dForecastZusatz").textContent = k.tage ? `Ø × ${k.tage} Tage` : "Reisedauer fehlt";
 
+  // Kontokachel
+  renderKontoKachel(k);
+
   // Budget
   setzeZahl("bSumme", zahl(k.budget));
   setzeZahl("bTage", k.tage ? String(k.tage) : "–");
@@ -874,6 +1009,12 @@ function renderAlles() {
   setzeKalenderGrenzen();
   renderPositionen(k);
   aktualisierePositionVorschau();
+
+  // Konto
+  setzeZahl("kSumme", zahl(k.konto));
+  setzeZahl("kIst", zahl(k.ist));
+  setzeZahl("kStand", zahl(k.kontostand), k.konto > 0 || k.ist > 0 ? (k.kontostand >= 0 ? "pos" : "neg") : null);
+  renderKonto(k);
 
   // Ausgaben
   setzeZahl("aSumme", zahl(k.ist));
@@ -1088,6 +1229,115 @@ document.getElementById("positionFormular").addEventListener("submit", (e) => {
 });
 document.getElementById("positionAbbrechen").addEventListener("click", () => {
   positionFormularZuruecksetzen();
+  renderAlles();
+});
+
+// ── Konto (11.10.2026) ───────────────────────────────────────────────
+function renderKontoKachel(k) {
+  const leer = !zustand.konto.length;
+  setzeZahl("dKontostand", leer ? "–" : zahl(k.kontostand), leer ? null : (k.kontostand >= 0 ? "pos" : "neg"));
+  document.getElementById("dKontoZusatz").textContent = leer
+    ? "Im Register Konto erfassen, was zur Verfügung steht"
+    : (k.konto > 0 ? `${formatZahlCH(Math.min(999, k.ist / k.konto * 100), 0)} % verbraucht` : "");
+  document.getElementById("dKonto").textContent = leer ? "–" : zahl(k.konto);
+  document.getElementById("dKontoIst").textContent = zahl(k.ist);
+  const reserve = document.getElementById("dKontoReserve");
+  reserve.textContent = leer || !k.tage ? "–" : zahl(k.reserveEnde, true);
+  reserve.className = "wert" + (leer || !k.tage ? "" : (k.reserveEnde >= 0 ? " pos" : " neg"));
+  reserve.title = "Konto − Forecast (Ø je Tag × Reisetage)";
+
+  // Balken: Anteil Ist am Konto, Strich = Forecast
+  const balken = document.getElementById("dKontoBalken");
+  const anteil = k.konto > 0 ? Math.min(100, k.ist / k.konto * 100) : 0;
+  document.getElementById("dKontoBalkenIst").style.width = `${anteil}%`;
+  balken.classList.toggle("ueberzogen", k.konto > 0 && k.ist > k.konto);
+  const strich = document.getElementById("dKontoBalkenForecast");
+  strich.hidden = !(k.konto > 0 && k.forecast > 0);
+  strich.style.left = `calc(${Math.min(100, k.forecast / k.konto * 100)}% - 1px)`;
+}
+
+let kontoBearbeitungsId = null;
+
+function renderKonto(k) {
+  const tbody = document.getElementById("kontoTabelle");
+  const tfoot = document.getElementById("kontoFuss");
+  tbody.innerHTML = "";
+  tfoot.innerHTML = "";
+  document.getElementById("kontoLeer").hidden = zustand.konto.length > 0;
+  const sortiert = [...zustand.konto].sort((a, b) => b.datum.localeCompare(a.datum));
+  for (const b of sortiert) {
+    const tr = document.createElement("tr");
+    if (b.id === kontoBearbeitungsId) tr.className = "in-bearbeitung";
+    const datum = document.createElement("td");
+    datum.textContent = datumKurz(b.datum, false);
+    const text = document.createElement("td");
+    text.textContent = b.text || "–";
+    const betrag = document.createElement("td");
+    betrag.className = "zahl-spalte" + (Number(b.betrag) < 0 ? " neg" : "");
+    betrag.textContent = formatZahlCH(Number(b.betrag));
+    const aktionen = document.createElement("td");
+    aktionen.className = "aktionen-spalte";
+    aktionen.append(bearbeitenKnopf(() => bearbeiteKonto(b.id)), loeschKnopf(() => loescheKonto(b.id)));
+    tr.append(datum, text, betrag, aktionen);
+    tbody.appendChild(tr);
+  }
+  if (zustand.konto.length) {
+    tfoot.innerHTML = `
+      <tr><td colspan="2">Total</td><td class="zahl-spalte">${formatZahlCH(k.konto)}</td><td></td></tr>`;
+  }
+}
+
+function bearbeiteKonto(id) {
+  const b = zustand.konto.find(x => x.id === id);
+  if (!b) return;
+  kontoBearbeitungsId = id;
+  document.getElementById("kontoDatum").value = b.datum;
+  document.getElementById("kontoBetrag").value = b.betrag;
+  document.getElementById("kontoText").value = b.text || "";
+  document.getElementById("kontoFormularTitel").textContent = "Betrag bearbeiten";
+  document.getElementById("kontoSpeichern").textContent = "Änderung speichern";
+  document.getElementById("kontoAbbrechen").hidden = false;
+  renderAlles();
+  document.getElementById("kontoFormularTitel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function kontoFormularZuruecksetzen() {
+  kontoBearbeitungsId = null;
+  document.getElementById("kontoDatum").value = heuteISO();
+  document.getElementById("kontoBetrag").value = "";
+  document.getElementById("kontoText").value = "";
+  document.getElementById("kontoFormularTitel").textContent = "Betrag erfassen";
+  document.getElementById("kontoSpeichern").textContent = "Betrag hinzufügen";
+  document.getElementById("kontoAbbrechen").hidden = true;
+  document.getElementById("kontoMeldung").hidden = true;
+}
+function loescheKonto(id) {
+  zustand.konto = zustand.konto.filter(b => b.id !== id);
+  if (kontoBearbeitungsId === id) kontoFormularZuruecksetzen();
+  speichere();
+}
+document.getElementById("kontoFormular").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const datum = document.getElementById("kontoDatum").value;
+  const betragRoh = document.getElementById("kontoBetrag").value;
+  const betrag = runde2(Number(betragRoh));
+  const text = document.getElementById("kontoText").value.trim().slice(0, 50);
+  const meldung = document.getElementById("kontoMeldung");
+  let fehler = "";
+  if (!datum) fehler = "Bitte ein Datum wählen.";
+  else if (betragRoh === "" || !Number.isFinite(betrag) || betrag === 0) fehler = "Bitte einen Betrag eingeben (nicht 0).";
+  if (fehler) { meldung.textContent = fehler; meldung.hidden = false; return; }
+
+  if (kontoBearbeitungsId) {
+    const b = zustand.konto.find(x => x.id === kontoBearbeitungsId);
+    if (b) Object.assign(b, { datum, betrag, text });
+  } else {
+    zustand.konto.push({ id: neueId(), datum, betrag, text });
+  }
+  kontoFormularZuruecksetzen();
+  speichere();
+});
+document.getElementById("kontoAbbrechen").addEventListener("click", () => {
+  kontoFormularZuruecksetzen();
   renderAlles();
 });
 
@@ -1574,10 +1824,11 @@ window.addEventListener("load", positioniereWelle);
 // ── Start ────────────────────────────────────────────────────────────
 renderWaehrungsListe();
 ausgabeFormularZuruecksetzen();
+kontoFormularZuruecksetzen();
 renderAlles();
 let startRegister = "dashboard";
 try { startRegister = localStorage.getItem(SPEICHER_KEY + ".register") || "dashboard"; } catch { /* egal */ }
-if (["dashboard", "budget", "ausgaben"].includes(startRegister)) zeigeRegister(startRegister);
+if (["dashboard", "budget", "konto", "ausgaben"].includes(startRegister)) zeigeRegister(startRegister);
 positioniereWelle();
 jsonbinSync();
 </script>
