@@ -42,7 +42,7 @@
   }
   main {
     padding-inline: 16px;
-    padding-block: calc(22px + env(safe-area-inset-top, 0px)) 120px;
+    padding-block: calc(22px + env(safe-area-inset-top, 0px)) calc(96px + env(safe-area-inset-bottom, 0px));
     max-width: 640px;
     margin: 0 auto;
   }
@@ -346,6 +346,9 @@
   .tabelle-kompakt td { padding: 7px 5px; }
   .tabelle-kompakt .btn-bearbeiten, .tabelle-kompakt .btn-loeschen { padding: 4px 4px; }
   .original-waehrung { color: var(--text-dim); }
+  .liste-kopf { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 22px 0 10px; }
+  .liste-kopf h2 { margin: 0; }
+  .btn-export { height: 34px; padding: 0 14px; font-size: 13px; flex: none; }
   .ausgabe-text { display: block; margin-top: 3px; font-size: 12px; color: var(--text-dim); line-height: 1.3; white-space: normal; word-break: break-word; }
   .positions-name { display: inline-flex; align-items: center; gap: 7px; }
 
@@ -364,7 +367,16 @@
 
   .leer { color: var(--text-dim); font-size: 13px; padding: 18px 12px; text-align: center; margin: 0; }
 
-  /* ── Tabbar (aus der Tinu-Trading-Vorlage) ────────────────────────── */
+  /* ── Tabbar (21.10.2026, wie im Reisetagebuch) ─────────────────────
+     Einfarbig in der Grundfarbe bis ganz unten (keine farbliche Kante zum
+     Home-Balken), aktives Register als goldene Pille. */
+  html { background: var(--bg); }
+  #statusAbdeckung {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: env(safe-area-inset-top, 0px);
+    background: var(--bg);
+    z-index: 9;
+  }
   #tabBar {
     position: fixed;
     left: 0;
@@ -372,34 +384,23 @@
     bottom: 0;
     display: flex;
     justify-content: space-around;
-    align-items: flex-start;
-    gap: 4px;
-    background: var(--tabbar);
-    padding: 14px 8px calc(10px + env(safe-area-inset-bottom, 0px));
+    align-items: center;
+    background: var(--bg);
+    transform: translateZ(0);
+    border-top: 1px solid var(--border);
+    /* Liegt das Fenster schon über dem Home-Balken (--luecke > 0), den
+       Abstand dafür nicht nochmals einrechnen -- Texte bleiben sichtbar. */
+    padding: 8px 8px calc(8px + max(0px, env(safe-area-inset-bottom, 0px) - var(--luecke, 0px)));
     z-index: 10;
-    --tab-x: 60px;
   }
-  #tabBarPlatte { position: absolute; top: 0; left: 0; width: 100%; height: 62px; z-index: -1; display: block; }
-  .tab-welle {
-    position: absolute;
-    left: calc(var(--tab-x) - 16px);
-    top: -4px;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: radial-gradient(circle, var(--accent) 0%, var(--accent-soft) 65%, transparent 100%);
-    transition: left 0.25s ease;
-    z-index: 1;
-    pointer-events: none;
-  }
+  #tabBarPlatte, .tab-welle { display: none; }
   .stand-anzeige {
     position: absolute;
-    top: 3px;
-    right: 10px;
+    top: 2px;
+    right: 8px;
     font-size: 9px;
     color: var(--text-dim);
     white-space: nowrap;
-    z-index: 2;
   }
   .tab-btn {
     background: none;
@@ -409,31 +410,29 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
-    padding: 0 8px;
+    gap: 3px;
+    padding: 2px 6px;
     flex: 1;
-    max-width: 96px;
-    position: relative;
-    z-index: 2;
-    transition: transform 0.25s ease;
+    max-width: 120px;
+    -webkit-tap-highlight-color: transparent;
   }
-  .tab-btn.aktiv { transform: translateY(-20px); }
   .tab-icon {
-    width: 32px;
-    height: 32px;
+    width: 58px;
+    height: 30px;
+    border-radius: 15px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 19px;
-    transition: transform 0.25s ease, filter 0.2s ease;
-    filter: grayscale(1) opacity(0.75);
+    font-size: 18px;
+    transition: background 0.2s ease, filter 0.2s ease;
+    filter: grayscale(1) opacity(0.7);
   }
-  .tab-btn.aktiv .tab-icon { transform: translateY(2px) scale(1.05); filter: none; }
-  .tab-label { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
-  .tab-btn.aktiv .tab-label { color: var(--text); font-weight: 600; }
+  .tab-btn.aktiv .tab-icon { background: var(--accent-soft); filter: none; }
+  .tab-label { font-size: 10.5px; color: var(--text-dim); white-space: nowrap; }
+  .tab-btn.aktiv .tab-label { color: var(--accent); font-weight: 600; }
 
   @media (prefers-reduced-motion: reduce) {
-    .tab-btn, .tab-icon, .tab-welle { transition: none; }
+    .tab-icon { transition: none; }
   }
   @media (max-width: 380px) {
     .stat .zahl { font-size: 15px; }
@@ -658,6 +657,9 @@
         <label>Datum
           <input type="date" id="ausgabeDatum">
         </label>
+        <label>Uhrzeit
+          <input type="time" id="ausgabeZeit">
+        </label>
         <label>Positionsname
           <span class="auswahl-huelle"><select id="ausgabePosition"></select></span>
         </label>
@@ -687,7 +689,11 @@
       </div>
     </form>
 
-    <h2>Ausgaben</h2>
+    <div class="liste-kopf">
+      <h2>Ausgaben</h2>
+      <button type="button" class="btn-abbrechen btn-export" id="excelExport">📊 Excel-Export</button>
+    </div>
+    <p class="formular-meldung" id="exportMeldung" hidden></p>
     <div class="tabelle-karte tabelle-scroll tabelle-kompakt">
       <table>
         <thead>
@@ -706,6 +712,7 @@
   </section>
 </main>
 
+<div id="statusAbdeckung" aria-hidden="true"></div>
 <nav id="tabBar">
   <svg id="tabBarPlatte" viewBox="0 0 400 62" preserveAspectRatio="none" aria-hidden="true">
     <path id="tabBarPfad" style="fill:var(--tabbar-platte);stroke:var(--border)" stroke-width="0.6"></path>
@@ -736,7 +743,8 @@
 // { beschreibung, start, ende, tage,
 //   positionen: [{id, name, proTag}],                    -- proTag in CHF
 //   ausgaben:   [{id, datum, positionId, betrag,         -- betrag in CHF
-//                 betragOrig, waehrung, kurs, text}],    -- Originalbeleg + Bemerkung
+//                 betragOrig, waehrung, kurs, text,      -- Originalbeleg + Bemerkung
+//                 zeit}],                                -- "HH:MM" (21.10.2026)
 //   konto:      [{id, datum, text, betrag}],             -- CHF, zur Verfügung
 //   kurse:      {EUR: 0.93, ...},                        -- letzte Kurse (offline)
 //   letzteWaehrung: "EUR" }
@@ -1465,17 +1473,39 @@ function renderPositionAuswahl() {
   if (zustand.positionen.some(p => p.id === bisher)) select.value = bisher;
 }
 
+// 21.10.2026: Uhrzeit der Ausgabe. Ältere Einträge ohne Uhrzeit: Zeitpunkt
+// der Erfassung (steckt in der ID) dient nur zum Sortieren.
+function jetztZeit() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+function ausgabeSortSchluessel(a) {
+  const erfasst = parseInt(String(a.id).slice(0, 8), 36) || 0;
+  return `${a.datum}T${a.zeit || "00:00"}|${String(erfasst).padStart(15, "0")}`;
+}
+// Neueste zuoberst (Datum, dann Uhrzeit)
+function ausgabenChronologisch(absteigend = true) {
+  const liste = [...zustand.ausgaben].sort((a, b) => ausgabeSortSchluessel(a).localeCompare(ausgabeSortSchluessel(b)));
+  return absteigend ? liste.reverse() : liste;
+}
+
 function renderAusgaben() {
   const tbody = document.getElementById("ausgabenTabelle");
   tbody.innerHTML = "";
   document.getElementById("ausgabenLeer").hidden = zustand.ausgaben.length > 0;
-  const sortiert = [...zustand.ausgaben].sort((a, b) => b.datum.localeCompare(a.datum));
+  const sortiert = ausgabenChronologisch(true);
   for (const a of sortiert) {
     const tr = document.createElement("tr");
     if (a.id === ausgabeBearbeitungsId) tr.className = "in-bearbeitung";
 
     const datum = document.createElement("td");
     datum.textContent = datumKurz(a.datum, false);
+    if (a.zeit) {
+      const z = document.createElement("span");
+      z.className = "ausgabe-text";
+      z.textContent = a.zeit;
+      datum.appendChild(z);
+    }
 
     // Positionsname direkt in der Zeile als Auswahlfeld (Umbuchen)
     const pos = document.createElement("td");
@@ -1545,6 +1575,7 @@ function bearbeiteAusgabe(id) {
   document.getElementById("ausgabeWaehrung").value = a.waehrung;
   document.getElementById("ausgabeKurs").value = a.kurs;
   document.getElementById("ausgabeText").value = a.text || "";
+  document.getElementById("ausgabeZeit").value = a.zeit || "";
   kursManuell = true;   // gespeicherten Kurs der Ausgabe nicht überschreiben
   renderPositionAuswahl();
   document.getElementById("ausgabePosition").value = positionName(a.positionId) ? a.positionId : "";
@@ -1562,6 +1593,7 @@ function ausgabeFormularZuruecksetzen(datum) {
   document.getElementById("ausgabeDatum").value = datum || heuteISO();
   document.getElementById("ausgabeBetrag").value = "";
   document.getElementById("ausgabeText").value = "";
+  document.getElementById("ausgabeZeit").value = jetztZeit();
   document.getElementById("ausgabeWaehrung").value = zustand.letzteWaehrung || HAUSWAEHRUNG;
   document.getElementById("ausgabeFormularTitel").textContent = "Ausgabe erfassen";
   document.getElementById("ausgabeSpeichern").textContent = "Ausgabe hinzufügen";
@@ -1594,7 +1626,8 @@ document.getElementById("ausgabeFormular").addEventListener("submit", (e) => {
   if (fehler) { meldung.textContent = fehler; meldung.hidden = false; return; }
 
   const text = document.getElementById("ausgabeText").value.trim();
-  const eintrag = { datum, positionId, betragOrig, waehrung, kurs, betrag: runde2(betragOrig * kurs), text };
+  const zeit = document.getElementById("ausgabeZeit").value || jetztZeit();
+  const eintrag = { datum, zeit, positionId, betragOrig, waehrung, kurs, betrag: runde2(betragOrig * kurs), text };
   if (ausgabeBearbeitungsId) {
     const a = zustand.ausgaben.find(x => x.id === ausgabeBearbeitungsId);
     if (a) Object.assign(a, eintrag);
@@ -1613,6 +1646,124 @@ document.getElementById("ausgabeAbbrechen").addEventListener("click", () => {
   ausgabeFormularZuruecksetzen();
   renderAusgaben();
 });
+
+// ── Excel-Export (21.10.2026) ────────────────────────────────────────
+// SheetJS wird erst beim ersten Export geladen. Blätter: Ausgaben (alle
+// Belege chronologisch), Budget (je Position Soll/Ist), Konto, Übersicht.
+const XLSX_LIB = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+function ladeXlsx() {
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((ok, fehler) => {
+    const s = document.createElement("script");
+    s.src = XLSX_LIB;
+    s.onload = () => ok();
+    s.onerror = () => fehler(new Error("Der Excel-Export braucht eine Internetverbindung."));
+    document.head.appendChild(s);
+  });
+}
+function excelDatum(iso) {
+  if (!iso) return "";
+  const [j, m, t] = iso.split("-").map(Number);
+  return new Date(j, m - 1, t);   // SheetJS rechnet in Ortszeit
+}
+function blattMitBreiten(zeilen, breiten, formate = {}) {
+  const ws = XLSX.utils.aoa_to_sheet(zeilen, { cellDates: true });
+  ws["!cols"] = breiten.map(w => ({ wch: w }));
+  // Zahlenformate je Spalte (ab Zeile 2)
+  const bereich = XLSX.utils.decode_range(ws["!ref"]);
+  for (let r = 1; r <= bereich.e.r; r++) {
+    for (const [spalte, z] of Object.entries(formate)) {
+      const zelle = ws[XLSX.utils.encode_cell({ r, c: Number(spalte) })];
+      if (zelle && (zelle.t === "n" || zelle.t === "d" || zelle.f)) zelle.z = z;
+    }
+  }
+  return ws;
+}
+async function excelExport() {
+  const knopf = document.getElementById("excelExport");
+  const meldung = document.getElementById("exportMeldung");
+  meldung.hidden = true;
+  knopf.disabled = true;
+  try {
+    await ladeXlsx();
+    const wb = XLSX.utils.book_new();
+    const geldFmt = "#,##0.00";
+
+    // Ausgaben: chronologisch (älteste zuerst), mit Summenzeile
+    const aus = ausgabenChronologisch(false);
+    const zA = [["Datum", "Uhrzeit", "Position", "Bemerkung", "Betrag", "Währung", "Kurs", "Betrag CHF"]];
+    for (const a of aus) {
+      zA.push([excelDatum(a.datum), a.zeit || "", positionName(a.positionId) || "ohne Position", a.text || "",
+        Number(a.betragOrig) || 0, a.waehrung, Number(a.kurs) || 1, Number(a.betrag) || 0]);
+    }
+    const n = aus.length;
+    zA.push([]);
+    zA.push(["Total", "", "", "", "", "", "", n ? { f: `SUM(H2:H${n + 1})`, v: zustand.ausgaben.reduce((s, a) => s + Number(a.betrag), 0) } : 0]);
+    XLSX.utils.book_append_sheet(wb, blattMitBreiten(zA, [11, 8, 18, 34, 11, 9, 9, 12], { 0: "dd.mm.yyyy", 4: geldFmt, 6: "0.0000", 7: geldFmt }), "Ausgaben");
+
+    // Budget je Position
+    const k = berechne(zustand, heuteISO());
+    const zB = [["Position", "Ø je Tag CHF", "Tage", "Budget CHF", "Ist CHF", "Delta CHF"]];
+    zustand.positionen.forEach((p, i) => {
+      const r = i + 2;
+      const ist = zustand.ausgaben.filter(a => a.positionId === p.id).reduce((s, a) => s + Number(a.betrag), 0);
+      zB.push([p.name, Number(p.proTag) || 0, k.tage, { f: `B${r}*C${r}`, v: (Number(p.proTag) || 0) * k.tage }, ist, { f: `D${r}-E${r}`, v: (Number(p.proTag) || 0) * k.tage - ist }]);
+    });
+    const ohne = zustand.ausgaben.filter(a => !positionName(a.positionId)).reduce((s, a) => s + Number(a.betrag), 0);
+    if (ohne) zB.push(["ohne Position", 0, k.tage, 0, ohne, -ohne]);
+    const m = zB.length;
+    zB.push([]);
+    zB.push(["Total", { f: `SUM(B2:B${m})`, v: k.budgetProTag }, k.tage, { f: `SUM(D2:D${m})`, v: k.budget }, { f: `SUM(E2:E${m})`, v: k.ist }, { f: `SUM(F2:F${m})`, v: k.delta }]);
+    XLSX.utils.book_append_sheet(wb, blattMitBreiten(zB, [20, 13, 7, 13, 13, 13], { 1: geldFmt, 3: geldFmt, 4: geldFmt, 5: geldFmt }), "Budget");
+
+    // Konto
+    const kon = [...zustand.konto].sort((a, b) => a.datum.localeCompare(b.datum));
+    const zK = [["Datum", "Bezeichnung", "Betrag CHF"]];
+    for (const b of kon) zK.push([excelDatum(b.datum), b.text || "", Number(b.betrag) || 0]);
+    zK.push([]);
+    zK.push(["Total", "", kon.length ? { f: `SUM(C2:C${kon.length + 1})`, v: k.konto } : 0]);
+    XLSX.utils.book_append_sheet(wb, blattMitBreiten(zK, [11, 30, 13], { 0: "dd.mm.yyyy", 2: geldFmt }), "Konto");
+
+    // Übersicht (Werte wie im Dashboard)
+    const zU = [
+      ["Reise", zustand.beschreibung || ""],
+      ["Von", excelDatum(zustand.start)], ["Bis", excelDatum(zustand.ende)], ["Tage", k.tage],
+      [],
+      ["Budget CHF", runde2(k.budget)], ["Ist-Kosten CHF", runde2(k.ist)], ["Delta Soll/Ist CHF", runde2(k.delta)],
+      ["Ø je Tag CHF", runde2(k.schnitt)], ["Forecast CHF", runde2(k.forecast)],
+      [],
+      ["Konto CHF", runde2(k.konto)], ["Kontostand CHF", runde2(k.kontostand)], ["Reserve Reiseende CHF", runde2(k.reserveEnde)],
+      [],
+      ["Exportiert", new Date().toLocaleString("de-CH")],
+    ];
+    const wsU = blattMitBreiten(zU, [24, 18], { 1: geldFmt });
+    for (const ref of ["B2", "B3"]) if (wsU[ref] && wsU[ref].t === "d") wsU[ref].z = "dd.mm.yyyy";
+    if (wsU.B4) wsU.B4.z = "0";
+    XLSX.utils.book_append_sheet(wb, wsU, "Übersicht");
+
+    const daten = XLSX.write(wb, { bookType: "xlsx", type: "array", cellDates: true });
+    const name = `reisebudget-${heuteISO()}.xlsx`;
+    const datei = new File([daten], name, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    if (navigator.canShare && navigator.canShare({ files: [datei] })) {
+      try { await navigator.share({ files: [datei], title: "Reisebudget" }); }
+      catch (e) { if (e.name !== "AbortError") throw e; }
+    } else {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(datei);
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+    }
+  } catch (fehler) {
+    meldung.textContent = fehler.message || "Der Export hat nicht geklappt.";
+    meldung.hidden = false;
+    console.error(fehler);
+  } finally {
+    knopf.disabled = false;
+  }
+}
+document.getElementById("excelExport").addEventListener("click", excelExport);
 
 // ── Balkendiagramm: Ist-Kosten je Reisetag, gestapelt nach Position ──
 // Zeichnet in echten Pixeln der aktuellen Breite (nicht per viewBox
@@ -1834,6 +1985,19 @@ window.addEventListener("resize", () => {
   resizeTimer = setTimeout(() => zeichneDiagramm(berechne(zustand, heuteISO())), 120);
 });
 window.addEventListener("load", positioniereWelle);
+
+// iPhone-Startbildschirm-App: iOS lässt das App-Fenster teils oberhalb des
+// Home-Balkens enden und füllt den Rest mit der Grundfarbe. Dann den
+// Abstand zum Home-Balken nicht nochmals einrechnen (wie im Reisetagebuch).
+function pruefeFensterhoehe() {
+  const standalone = navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+  const hoch = matchMedia("(orientation: portrait)").matches;
+  const luecke = Math.max(screen.height, screen.width) - window.innerHeight;
+  document.documentElement.style.setProperty("--luecke", `${standalone && hoch && luecke > 0 && luecke < 100 ? luecke : 0}px`);
+}
+pruefeFensterhoehe();
+window.addEventListener("resize", pruefeFensterhoehe);
+window.addEventListener("orientationchange", () => setTimeout(pruefeFensterhoehe, 300));
 
 // ── Start ────────────────────────────────────────────────────────────
 renderWaehrungsListe();
