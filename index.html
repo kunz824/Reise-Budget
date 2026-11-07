@@ -150,6 +150,24 @@
   .neg { color: var(--neg); }
 
   /* ── Diagramm ─────────────────────────────────────────────────────── */
+  .kat-liste { display: flex; flex-direction: column; gap: 14px; }
+  .kat-zeile { display: flex; flex-direction: column; gap: 5px; }
+  .kat-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13.5px; }
+  .kat-name { display: flex; align-items: center; gap: 7px; font-weight: 600; min-width: 0; }
+  .kat-name i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .kat-werte { color: var(--text-dim); font-size: 12.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .kat-werte b { color: var(--text); font-weight: 600; }
+  .kat-balken { position: relative; height: 14px; border-radius: 7px; background: var(--bg); overflow: hidden; border: 1px solid var(--border); }
+  .kat-balken .ist { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 7px; }
+  .kat-balken .soll { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--text); opacity: .8; }
+  .kat-balken.ueber { border-color: var(--neg); }
+  .kat-schnitt { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .kat-schnitt .neg { color: var(--neg); } .kat-schnitt .pos { color: var(--pos); }
+  .kat-legende { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 14px; font-size: 12px; color: var(--text-dim); }
+  .kat-legende i { display: inline-block; width: 14px; height: 8px; border-radius: 4px; margin-right: 5px; vertical-align: middle; }
+  .kat-l-ist { background: var(--accent); }
+  .kat-l-budget { background: var(--bg); border: 1px solid var(--border); }
+  .kat-l-soll { width: 2px !important; height: 12px !important; background: var(--text); border-radius: 0 !important; }
   .diagramm-karte {
     background: var(--bg-panel);
     border: 1px solid var(--border);
@@ -502,6 +520,17 @@
       <svg id="tagesDiagramm" role="img" aria-label="Gestapeltes Balkendiagramm der Ist-Kosten je Reisetag nach Budgetposition"></svg>
       <div class="legende-balken" id="diagrammLegende"></div>
       <div class="diagramm-auswahl" id="diagrammAuswahl">Tippe auf einen Tag für Details.</div>
+    </div>
+
+    <!-- 08.11.2026: Vergleich je Kategorie -->
+    <h2>Je Kategorie: Ausgabe, Budget, Ø je Tag (CHF)</h2>
+    <div class="diagramm-karte">
+      <div id="kategorieDiagramm" class="kat-liste"></div>
+      <div class="kat-legende">
+        <span><i class="kat-l-ist"></i>Ausgabe (Ist)</span>
+        <span><i class="kat-l-budget"></i>Budget gesamt</span>
+        <span><i class="kat-l-soll"></i>Soll bis heute</span>
+      </div>
     </div>
   </section>
 
@@ -1038,6 +1067,7 @@ function renderAlles() {
   renderAusgaben();
 
   zeichneDiagramm(k);
+  zeichneKategorien(k);
 }
 
 // ── Zweistufiges Löschen (Bestätigung direkt am Knopf) ───────────────
@@ -1798,6 +1828,68 @@ function renderLegende(mitOhnePosition) {
   const ueber = document.createElement("span");
   ueber.className = "legende-ueber";
   eintrag(ueber, "über Tagesbudget");
+}
+
+// 08.11.2026: je Kategorie (Budgetposition): Ausgabe gegenüber Budget
+// (Balken = Ist, ganzer Balken = Budget der Reise, Strich = Soll bis heute)
+// und Durchschnitt je Tag: Ist gegenüber Budget je Tag.
+function zeichneKategorien(k) {
+  const ziel = document.getElementById("kategorieDiagramm");
+  if (!ziel) return;
+  ziel.innerHTML = "";
+  const tage = k.tage || 0, vergangen = k.vergangen || 0;
+  const zeilen = zustand.positionen.map(p => ({
+    id: p.id, name: p.name, farbe: positionsFarbe(p.id),
+    proTag: Number(p.proTag) || 0,
+    ist: zustand.ausgaben.filter(a => a.positionId === p.id).reduce((s, a) => s + (Number(a.betrag) || 0), 0),
+  }));
+  const ohne = zustand.ausgaben.filter(a => !positionName(a.positionId)).reduce((s, a) => s + (Number(a.betrag) || 0), 0);
+  if (ohne > 0) zeilen.push({ id: "_ohne", name: "ohne Position", farbe: "#8b93a3", proTag: 0, ist: ohne });
+  if (!zeilen.length) { ziel.innerHTML = '<p class="leer">Noch keine Budgetpositionen.</p>'; return; }
+  for (const z of zeilen) {
+    const budget = z.proTag * tage;
+    const soll = z.proTag * vergangen;
+    const schnitt = vergangen > 0 ? z.ist / vergangen : 0;
+    const voll = Math.max(budget, z.ist, 1);
+    const zeile = document.createElement("div");
+    zeile.className = "kat-zeile";
+    const kopf = document.createElement("div");
+    kopf.className = "kat-kopf";
+    const name = document.createElement("span");
+    name.className = "kat-name";
+    const punkt = document.createElement("i");
+    punkt.style.background = z.farbe;
+    name.append(punkt, z.name);
+    const werte = document.createElement("span");
+    werte.className = "kat-werte";
+    const proz = budget > 0 ? ` · ${Math.round(z.ist / budget * 100)} %` : "";
+    werte.innerHTML = `<b>${formatZahlCH(z.ist)}</b> / ${formatZahlCH(budget)}${proz}`;
+    kopf.append(name, werte);
+    const balken = document.createElement("div");
+    balken.className = "kat-balken" + (budget > 0 && z.ist > budget ? " ueber" : "");
+    const ist = document.createElement("span");
+    ist.className = "ist";
+    ist.style.width = `${Math.min(100, z.ist / voll * 100)}%`;
+    ist.style.background = z.farbe;
+    balken.appendChild(ist);
+    if (budget > 0 && vergangen > 0) {
+      const m = document.createElement("span");
+      m.className = "soll";
+      m.style.left = `calc(${Math.min(100, soll / voll * 100)}% - 1px)`;
+      m.title = `Soll bis heute: ${formatZahlCH(soll)}`;
+      balken.appendChild(m);
+    }
+    const sch = document.createElement("div");
+    sch.className = "kat-schnitt";
+    const l = document.createElement("span");
+    l.textContent = `Ø je Tag: ${formatZahlCH(schnitt)}`;
+    const rr = document.createElement("span");
+    rr.textContent = `Budget je Tag: ${formatZahlCH(z.proTag)}`;
+    if (z.proTag > 0 && vergangen > 0) l.className = schnitt > z.proTag ? "neg" : "pos";
+    sch.append(l, rr);
+    zeile.append(kopf, balken, sch);
+    ziel.appendChild(zeile);
+  }
 }
 
 function zeichneDiagramm(k) {
